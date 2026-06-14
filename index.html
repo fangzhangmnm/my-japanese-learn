@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- iOS: allow "Add to Home Screen" so it opens full-screen for transit use -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="日语·定制">
+<meta name="theme-color" content="#0b0d12">
+<title>my-japanese-learn · 定制日语学习引擎</title>
+<style>
+  :root { color-scheme: dark; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: #0b0d12;
+    color: #e7e9ee;
+    font-family: -apple-system, "PingFang SC", "Hiragino Sans", system-ui, sans-serif;
+    display: flex; align-items: center; justify-content: center;
+    padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
+    box-sizing: border-box;
+    -webkit-text-size-adjust: 100%;
+  }
+  main { max-width: 32rem; line-height: 1.7; }
+  h1 { font-size: 1.5rem; margin: 0 0 .25rem; }
+  .sub { color: #8b93a7; font-size: .95rem; margin: 0 0 1.5rem; }
+  .tag {
+    display: inline-block; font-size: .75rem; letter-spacing: .04em;
+    color: #9ecbff; border: 1px solid #2b3346; border-radius: 999px;
+    padding: .2rem .6rem; margin-bottom: 1.25rem;
+  }
+  p { color: #c4c9d4; }
+  .note { color: #6f7689; font-size: .85rem; margin-top: 2rem; }
+  code { background:#161a24; padding:.1rem .35rem; border-radius:4px; font-size:.85em; }
+</style>
+</head>
+<body>
+<main>
+  <div class="tag">N=1 · 碎片优先 · off-grid</div>
+  <h1>定制日语学习引擎</h1>
+  <p class="sub">为「动漫 / galge / gamedev / 绘画」量身,不是给所有人的教材。</p>
+  <p>占位页面 — 学习内容(div-by-div 单 HTML)正在 author 中。这一页确认了通勤途中 iOS Safari 的离线访问链路:把它<strong>添加到主屏幕</strong>即可全屏离线打开。</p>
+  <p class="note">真相源是下载的 <code>telemetry-&lt;chapter&gt;.json</code>,绝不绑死在本文件里。设计 config 留在本地,不进这个公开仓库。</p>
+</main>
+</body>
+</html>
