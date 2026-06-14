@@ -17,6 +17,7 @@
     --r:14px;
   }
   *{box-sizing:border-box}
+  [hidden]{display:none!important}  /* 别让 .reveal/.selfrate 的 display:flex 盖过 hidden */
   html,body{margin:0;height:100%}
   body{
     background:var(--bg); color:var(--ink);
@@ -190,20 +191,20 @@ const $$ = (s,r)=>[...(r||document).querySelectorAll(s)];
 
 /* ---------- 数据 ---------- */
 const KATAKANA = [
-  {jp:"レイヤー", ro:"reiyā", en:"layer", zh:"图层"},
-  {jp:"ブラシ",   ro:"burashi", en:"brush", zh:"笔刷"},
-  {jp:"セーブ",   ro:"sēbu", en:"save", zh:"存档"},
-  {jp:"キャラ",   ro:"kyara", en:"character", zh:"角色"},
-  {jp:"スキル",   ro:"sukiru", en:"skill", zh:"技能"},
-  {jp:"ゲーム",   ro:"gēmu", en:"game", zh:"游戏"},
+  {jp:"ダウンロード", ro:"daunrōdo", en:"download", zh:"下载"},
+  {jp:"インストール", ro:"insutōru", en:"install", zh:"安装"},
+  {jp:"パレット",     ro:"paretto", en:"palette", zh:"调色板"},
+  {jp:"レベル",       ro:"reberu", en:"level", zh:"等级"},
+  {jp:"アイテム",     ro:"aitemu", en:"item", zh:"道具"},
+  {jp:"ゲット",       ro:"getto", en:"get", zh:"拿到 / 获得"},
 ];
 const ONYOMI = [
-  {jp:"世界", ro:"sekai", zh:"世界", note:"几乎照搬"},
-  {jp:"魔法", ro:"mahō", zh:"魔法", note:"法 fǎ→hō"},
-  {jp:"勇者", ro:"yūsha", zh:"勇者", note:"者 zhě→sha"},
-  {jp:"戦闘", ro:"sentō", zh:"战斗", note:"后鼻音→长音"},
-  {jp:"必殺", ro:"hissatsu", zh:"必杀", note:"入声 殺→…tsu"},
-  {jp:"学園", ro:"gakuen", zh:"学园", note:"入声 学→gaku"},
+  {jp:"騎士", ro:"kishi", zh:"骑士", note:"几乎照搬"},
+  {jp:"攻撃", ro:"kōgeki", zh:"攻击", note:"后鼻音→长音(攻 kō)"},
+  {jp:"伝説", ro:"densetsu", zh:"传说", note:"入声 説→…tsu"},
+  {jp:"冒険", ro:"bōken", zh:"冒险", note:"后鼻音→长音(冒 bō)"},
+  {jp:"必勝", ro:"hisshō", zh:"必胜", note:"入声 必→促音(hisshō)"},
+  {jp:"変身", ro:"henshin", zh:"变身", note:"几乎照搬"},
 ];
 const KANA = [
   {k:"シ", a:"shi", opts:["shi","tsu","so","n"]},
@@ -452,8 +453,8 @@ cards.push({
       </div>
       <div id="lrev" hidden>
         <div class="word" style="margin-top:.4rem">
-          <div class="jp" style="font-size:1.3rem;cursor:default">ゲーム を セーブ した?</div>
-          <div class="reveal" style="min-height:auto"><div class="romaji">gēmu o sēbu shita?</div><div class="gloss">「(游戏)存档了吗?」</div></div>
+          <div class="jp" style="font-size:1.3rem;cursor:default">アイテム を ゲット した!</div>
+          <div class="reveal" style="min-height:auto"><div class="romaji">aitemu o getto shita!</div><div class="gloss">「(我)拿到道具了!」</div></div>
         </div>
         <div style="text-align:center;margin:.7rem 0">
           <button class="btn" id="play2">⏩ 再听一遍(正常语速)</button>
@@ -469,8 +470,8 @@ cards.push({
         </div>
       </label>
     </div>`);
-    $('#play1',card).onclick=()=>{ speak("ゲームをセーブした", 0.7); $('#lrev',card).hidden=false; };
-    $('#play2',card).onclick=()=> speak("ゲームをセーブした", 1.0);
+    $('#play1',card).onclick=()=>{ speak("アイテムをゲットした", 0.7); $('#lrev',card).hidden=false; };
+    $('#play2',card).onclick=()=> speak("アイテムをゲットした", 1.0);
     $$('#lrate .rate',card).forEach(b=> b.onclick=()=>{
       $$('#lrate .rate',card).forEach(x=>x.className='rate');
       b.classList.add(b.dataset.r==='most'?'sel-yes':b.dataset.r==='some'?'sel-mid':'sel-no');
