@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="日语·Unit 1">
+<meta name="theme-color" content="#0b0d12">
+<title>Unit 1 · 你已经是谁 — 定制日语</title>
+<style>
+  :root{
+    color-scheme: dark;
+    --bg:#0b0d12; --panel:#12151d; --panel2:#161a24; --line:#252b3a;
+    --ink:#e7e9ee; --ink2:#c4c9d4; --mut:#8b93a7; --mut2:#6f7689;
+    --accent:#9ecbff; --good:#7ee0a8; --warn:#ffd479; --bad:#ff8d8d;
+    --r:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:-apple-system,"PingFang SC","Hiragino Sans",system-ui,sans-serif;
+    -webkit-text-size-adjust:100%;
+    padding:max(14px,env(safe-area-inset-top)) 14px max(20px,env(safe-area-inset-bottom));
+  }
+  .wrap{max-width:33rem;margin:0 auto}
+
+  /* progress */
+  .top{display:flex;align-items:center;gap:.5rem;margin:.2rem 0 1rem}
+  .top .name{font-size:.78rem;color:var(--mut);letter-spacing:.03em}
+  .top .home{font-size:.78rem;color:var(--accent);text-decoration:none;border:1px solid var(--line);border-radius:8px;padding:.18rem .5rem}
+  .top .home:active{transform:scale(.96)}
+  .dots{display:flex;gap:5px;margin-left:auto}
+  .dot{width:7px;height:7px;border-radius:50%;background:#2a3144;transition:.2s}
+  .dot.on{background:var(--accent)}
+  .dot.done{background:#37506e}
+
+  .card{
+    background:var(--panel); border:1px solid var(--line);
+    border-radius:var(--r); padding:18px 16px 20px;
+    animation:pop .22s ease;
+  }
+  @keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .kicker{font-size:.74rem;letter-spacing:.06em;color:var(--accent);text-transform:uppercase;margin-bottom:.5rem}
+  h1{font-size:1.45rem;line-height:1.3;margin:.1rem 0 .7rem}
+  h2{font-size:1.15rem;margin:.1rem 0 .6rem}
+  p{color:var(--ink2);line-height:1.65;margin:.55rem 0}
+  .mut{color:var(--mut)}
+  .small{font-size:.85rem}
+  .hr{height:1px;background:var(--line);margin:1rem 0;border:0}
+  b,strong{color:var(--ink)}
+  em{color:var(--accent);font-style:normal}
+
+  /* buttons */
+  .btn{
+    -webkit-appearance:none;appearance:none;cursor:pointer;
+    display:inline-flex;align-items:center;justify-content:center;gap:.4rem;
+    background:var(--panel2);color:var(--ink);border:1px solid var(--line);
+    border-radius:11px;padding:.7rem 1rem;font-size:1rem;font-family:inherit;
+    transition:.12s; touch-action:manipulation;
+  }
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:#1d2c44;border-color:#345080;color:#dbe9ff}
+  .btn.wide{width:100%}
+  .btn.ghost{background:transparent}
+  .btn:disabled{cursor:default}
+  .nav{display:flex;gap:.6rem;margin-top:1.1rem}
+  .nav .btn{flex:1}
+  .spk{
+    border:1px solid var(--line);background:var(--panel2);border-radius:9px;
+    width:2.2rem;height:2.2rem;display:inline-flex;align-items:center;justify-content:center;
+    cursor:pointer;font-size:1.05rem;flex:none;touch-action:manipulation;color:var(--ink);
+  }
+  .spk:active{transform:scale(.92)}
+
+  /* probe items */
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:.55rem;margin:.7rem 0}
+  .word{
+    background:var(--panel2);border:1px solid var(--line);border-radius:12px;
+    padding:.7rem .7rem .6rem;text-align:center;
+  }
+  .jp{font-size:1.5rem;line-height:1.25;letter-spacing:.02em;cursor:pointer}
+  .reveal{margin-top:.35rem;min-height:2.4rem;display:flex;flex-direction:column;gap:.1rem;justify-content:center}
+  .romaji{color:var(--accent);font-size:.95rem}
+  .gloss{color:var(--mut);font-size:.82rem}
+  .wordfoot{display:flex;gap:.4rem;align-items:center;justify-content:center;margin-top:.5rem}
+  .tap-hint{font-size:.78rem;color:var(--mut2)}
+
+  .selfrate{display:flex;gap:.4rem;justify-content:center;margin-top:.5rem;flex-wrap:wrap}
+  .rate{
+    border:1px solid var(--line);background:transparent;border-radius:8px;
+    padding:.3rem .55rem;font-size:.8rem;color:var(--mut);cursor:pointer;font-family:inherit;
+  }
+  .rate.sel-yes{background:#16341f;border-color:#2f6b43;color:var(--good)}
+  .rate.sel-mid{background:#3a3413;border-color:#7a6a26;color:var(--warn)}
+  .rate.sel-no{background:#3a1717;border-color:#7a2f2f;color:var(--bad)}
+
+  /* MC quiz */
+  .opts{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.7rem}
+  .opt{
+    border:1px solid var(--line);background:var(--panel2);border-radius:10px;
+    padding:.85rem;font-size:1.1rem;cursor:pointer;text-align:center;font-family:inherit;color:var(--ink);
+    transition:.1s;touch-action:manipulation;
+  }
+  .opt:active{transform:scale(.97)}
+  .opt.correct{background:#16341f;border-color:#2f6b43;color:var(--good)}
+  .opt.wrong{background:#3a1717;border-color:#7a2f2f;color:var(--bad)}
+  .opt[disabled]{opacity:.55}
+
+  .quizq{font-size:2.6rem;text-align:center;margin:.5rem 0 .2rem;letter-spacing:.04em;cursor:pointer}
+  .quizmeta{text-align:center;color:var(--mut);font-size:.85rem}
+
+  /* horizon list */
+  .stage-row{display:flex;gap:.7rem;align-items:flex-start;margin:.7rem 0}
+  .stage-row .ic{font-size:1.3rem;line-height:1.6;flex:none;width:1.8rem;text-align:center}
+  .stage-row .t{font-weight:600}
+  .stage-row .d{color:var(--mut);font-size:.88rem;margin-top:.1rem}
+
+  /* statsheet */
+  .stat{margin:.7rem 0}
+  .stat .lab{display:flex;justify-content:space-between;font-size:.9rem;margin-bottom:.25rem}
+  .stat .lab span:last-child{color:var(--mut)}
+  .bar{height:8px;background:#222838;border-radius:6px;overflow:hidden}
+  .bar i{display:block;height:100%;background:linear-gradient(90deg,#345080,#9ecbff);border-radius:6px;transition:width .6s ease}
+
+  textarea,select{
+    width:100%;background:var(--panel2);color:var(--ink);border:1px solid var(--line);
+    border-radius:10px;padding:.6rem;font-family:inherit;font-size:.95rem;margin-top:.4rem;
+  }
+  textarea{min-height:4.2rem;resize:vertical}
+  label.q{display:block;margin-top:.9rem;font-size:.92rem;color:var(--ink2)}
+
+  .note{color:var(--mut2);font-size:.82rem;line-height:1.55;margin-top:1.2rem}
+  code{background:var(--panel2);padding:.1rem .35rem;border-radius:4px;font-size:.85em}
+  .ok-flash{color:var(--good)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <a class="home" href="index.html">← 目录</a>
+    <span class="name">Unit 1</span>
+    <div class="dots" id="dots"></div>
+  </div>
+  <div id="stage"></div>
+</div>
+
+<script>
+/* ============================================================
+   Unit 1 · 「你已经是谁」 — 纯 pilot:广谱摸底 + 远景
+   状态不绑文件:全程内存,结束下载 telemetry-unit1.json
+   ============================================================ */
+
+const STATE = {
+  unit: "unit1",
+  schema: 1,
+  startedAt: Date.now(),
+  completedAt: null,
+  layer2_katakana: {},
+  layer1_onyomi: {},
+  kana: {},
+  grammar: {},
+  listening: {},
+  selfReport: {},
+};
+
+/* ---------- TTS ---------- */
+let jaVoice = null;
+function pickVoice(){
+  const vs = window.speechSynthesis ? speechSynthesis.getVoices() : [];
+  jaVoice = vs.find(v=>/ja[-_]?JP/i.test(v.lang)) || vs.find(v=>/^ja/i.test(v.lang)) || null;
+}
+if(window.speechSynthesis){ pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+function speak(text, rate){
+  if(!window.speechSynthesis) return;
+  try{
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "ja-JP"; u.rate = rate||0.85; u.pitch = 1;
+    if(jaVoice) u.voice = jaVoice;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+
+/* ---------- helpers ---------- */
+const el = (h)=>{ const t=document.createElement('template'); t.innerHTML=h.trim(); return t.content.firstChild; };
+const $ = (s,r)=>(r||document).querySelector(s);
+const $$ = (s,r)=>[...(r||document).querySelectorAll(s)];
+
+/* ---------- 数据 ---------- */
+const KATAKANA = [
+  {jp:"レイヤー", ro:"reiyā", en:"layer", zh:"图层"},
+  {jp:"ブラシ",   ro:"burashi", en:"brush", zh:"笔刷"},
+  {jp:"セーブ",   ro:"sēbu", en:"save", zh:"存档"},
+  {jp:"キャラ",   ro:"kyara", en:"character", zh:"角色"},
+  {jp:"スキル",   ro:"sukiru", en:"skill", zh:"技能"},
+  {jp:"ゲーム",   ro:"gēmu", en:"game", zh:"游戏"},
+];
+const ONYOMI = [
+  {jp:"世界", ro:"sekai", zh:"世界", note:"几乎照搬"},
+  {jp:"魔法", ro:"mahō", zh:"魔法", note:"法 fǎ→hō"},
+  {jp:"勇者", ro:"yūsha", zh:"勇者", note:"者 zhě→sha"},
+  {jp:"戦闘", ro:"sentō", zh:"战斗", note:"后鼻音→长音"},
+  {jp:"必殺", ro:"hissatsu", zh:"必杀", note:"入声 殺→…tsu"},
+  {jp:"学園", ro:"gakuen", zh:"学园", note:"入声 学→gaku"},
+];
+const KANA = [
+  {k:"シ", a:"shi", opts:["shi","tsu","so","n"]},
+  {k:"ツ", a:"tsu", opts:["tsu","shi","n","so"]},
+  {k:"ン", a:"n",  opts:["n","so","shi","tsu"]},
+  {k:"ソ", a:"so", opts:["so","n","tsu","shi"]},
+  {k:"ね", a:"ne", opts:["ne","re","wa","wo"]},
+  {k:"れ", a:"re", opts:["re","ne","wa","ru"]},
+  {k:"わ", a:"wa", opts:["wa","ne","re","ha"]},
+  {k:"る", a:"ru", opts:["ru","ro","ne","wa"]},
+  {k:"ろ", a:"ro", opts:["ro","ru","re","na"]},
+  {k:"き", a:"ki", opts:["ki","sa","chi","ke"]},
+];
+
+/* ============================================================
+   卡片定义
+   ============================================================ */
+const cards = [];
+
+/* ---- C0 开场 + 远景 ---- */
+cards.push({
+  key:"intro",
+  render(host){
+    host.appendChild(el(`
+    <div class="card">
+      <div class="kicker">Unit 1 · 摸底 + 远景</div>
+      <h1>这一关不教你东西。<br>先看看你<em>已经是谁</em>。</h1>
+      <p>你不是从零开始学日语。你已经有两件大杀器:<b>巨量中文</b>(汉字词的解码钥匙)和<b>英语</b>(外来语的解码钥匙),还有 15 年看番攒下的<b>耳朵权重</b>。</p>
+      <p>日语对你不是「新语言」,是<em>你已有两种语言的系统变换 + 一层假名苦工</em>。这个 Unit 不灌内容,只做一件高价值的事:<b>精确测出你在每一层坐在哪里</b>,好让下一个 Unit 跳过你已会的,只打你真正的洞。</p>
+
+      <div class="hr"></div>
+      <h2 class="small mut" style="letter-spacing:.04em">你要去的三个地方</h2>
+      <div class="stage-row"><div class="ic">🛒</div><div><div class="t">逛 pixiv / 在 DLsite 买 galge</div><div class="d">导航识字:网页上那些片假名按钮,大多你学一遍音系就能直接读。最快的 quick win。</div></div></div>
+      <div class="stage-row"><div class="ic">📖</div><div><div class="t">galge 生肉能啃</div><div class="d">汉字词靠中文解码,假名+语法补齐,你已消费的叙事变成可读素材。</div></div></div>
+      <div class="stage-row"><div class="ic">🎧</div><div><div class="t">不看字幕看番</div><div class="d">长渐近线。把理解从「读字幕」搬回「用耳朵」。这关只测起点,真功夫在后面。</div></div></div>
+
+      <p class="small mut" style="margin-top:1rem">⏱️ 大概 5–8 分钟,一根拇指点完。结束会下载一个 <code>telemetry-unit1.json</code> —— 你的存档,我据它出下一关。</p>
+    </div>`));
+  }
+});
+
+/* ---- C1 片假名解码 (层②) ---- */
+cards.push({
+  key:"katakana",
+  render(host){
+    const card = el(`
+    <div class="card">
+      <div class="kicker">层② · 片假名 = 过了滤镜的英语</div>
+      <h2>你的兴趣域,近乎作弊</h2>
+      <p>绘画、gamedev 里的词,大半是英语借来的。先<b>盖着读音猜一下英文</b>,再点开看对没对。这是在测:你的「英语→假名」解码能力现在多强。</p>
+      <div class="grid" id="kk"></div>
+      <p class="tap-hint">点卡片揭晓 · 🔊 听发音 · 然后标「认出来了吗」</p>
+    </div>`);
+    const grid = $('#kk', card);
+    KATAKANA.forEach(w=>{
+      const c = el(`
+      <div class="word">
+        <div class="jp">${w.jp}</div>
+        <div class="reveal" hidden>
+          <div class="romaji">${w.ro} · ${w.en}</div>
+          <div class="gloss">${w.zh}</div>
+        </div>
+        <div class="wordfoot" hidden><button class="spk" aria-label="读">🔊</button></div>
+        <div class="selfrate" hidden>
+          <button class="rate" data-r="yes">猜对了</button>
+          <button class="rate" data-r="mid">差一点</button>
+          <button class="rate" data-r="no">不会</button>
+        </div>
+      </div>`);
+      const jp = $('.jp',c), rev=$('.reveal',c), foot=$('.wordfoot',c), sr=$('.selfrate',c);
+      jp.onclick = ()=>{ rev.hidden=false; foot.hidden=false; sr.hidden=false; speak(w.jp); };
+      $('.spk',c).onclick=(e)=>{ e.stopPropagation(); speak(w.jp); };
+      $$('.rate',c).forEach(b=> b.onclick=()=>{
+        $$('.rate',c).forEach(x=>x.className='rate');
+        const r=b.dataset.r;
+        b.classList.add(r==='yes'?'sel-yes':r==='mid'?'sel-mid':'sel-no');
+        STATE.layer2_katakana[w.jp]={rate:r};
+        refreshNav();
+      });
+      grid.appendChild(c);
+    });
+    host.appendChild(card);
+  },
+  done(){ return Object.keys(STATE.layer2_katakana).length >= 4; },
+  hint:"先把至少 4 个标一下 ↑"
+});
+
+/* ---- C2 音读解码 (层①) ---- */
+cards.push({
+  key:"onyomi",
+  render(host){
+    const card = el(`
+    <div class="card">
+      <div class="kicker">层① · 音读 = 带规律音变的中文方言</div>
+      <h2>这些字你都认识 —— 它们怎么念?</h2>
+      <p>汉字词约占日语六成,是中古汉语的后裔,跟普通话是<b>表亲</b>。猜一下日语读音(随便用拼音感觉),再揭晓。测的是:你能不能感到那条<em>中文→音读</em>的映射函数。</p>
+      <div class="grid" id="oy"></div>
+      <p class="tap-hint">点卡片揭晓 · 注意末尾那条映射规律</p>
+    </div>`);
+    const grid=$('#oy',card);
+    ONYOMI.forEach(w=>{
+      const c=el(`
+      <div class="word">
+        <div class="jp">${w.jp}</div>
+        <div class="reveal" hidden>
+          <div class="romaji">${w.ro}</div>
+          <div class="gloss">${w.zh} · ${w.note}</div>
+        </div>
+        <div class="wordfoot" hidden><button class="spk">🔊</button></div>
+        <div class="selfrate" hidden>
+          <button class="rate" data-r="yes">念对了</button>
+          <button class="rate" data-r="mid">沾边</button>
+          <button class="rate" data-r="no">没头绪</button>
+        </div>
+      </div>`);
+      const jp=$('.jp',c),rev=$('.reveal',c),foot=$('.wordfoot',c),sr=$('.selfrate',c);
+      jp.onclick=()=>{ rev.hidden=false; foot.hidden=false; sr.hidden=false; speak(w.jp); };
+      $('.spk',c).onclick=(e)=>{e.stopPropagation();speak(w.jp);};
+      $$('.rate',c).forEach(b=>b.onclick=()=>{
+        $$('.rate',c).forEach(x=>x.className='rate');
+        const r=b.dataset.r;
+        b.classList.add(r==='yes'?'sel-yes':r==='mid'?'sel-mid':'sel-no');
+        STATE.layer1_onyomi[w.jp]={rate:r}; refreshNav();
+      });
+      grid.appendChild(c);
+    });
+    host.appendChild(card);
+  },
+  done(){ return Object.keys(STATE.layer1_onyomi).length >= 4; },
+  hint:"先把至少 4 个标一下 ↑"
+});
+
+/* ---- C3 假名诚实 probe ---- */
+cards.push({
+  key:"kana",
+  render(host){
+    const card=el(`
+    <div class="card">
+      <div class="kicker">假名本体 · 这层你可能真的弱</div>
+      <h2>诚实一下:这是哪个假名?</h2>
+      <p>上面两层你靠中文/英语作弊。但<b>假名本身</b>没有捷径,而且有几个长得像镜像的(シ/ツ、ン/ソ、ね/れ/わ、る/ろ)最容易记反。这里快速点 10 个,我好知道<em>哪几个要给你特训</em>。没学过就大胆猜 —— 猜错正是有用信息。</p>
+      <div id="kanaq"></div>
+    </div>`);
+    const box=$('#kanaq',card);
+    let i=0; const order=[...KANA];
+    function show(){
+      box.innerHTML='';
+      if(i>=order.length){
+        box.appendChild(el(`<div style="text-align:center;padding:.6rem 0">
+          <div class="ok-flash" style="font-size:1.6rem">✓</div>
+          <p class="mut small">假名摸底完成 —— 点下一步。</p></div>`));
+        refreshNav(); return;
+      }
+      const q=order[i];
+      const node=el(`
+        <div>
+          <div class="quizmeta">${i+1} / ${order.length}　点字可听音 🔊</div>
+          <div class="quizq">${q.k}</div>
+          <div class="opts"></div>
+        </div>`);
+      $('.quizq',node).onclick=()=>speak(q.k);
+      const opts=$('.opts',node);
+      const shuffled=q.opts.map(o=>[o,Math.random()]).sort((a,b)=>a[1]-b[1]).map(x=>x[0]);
+      shuffled.forEach(o=>{
+        const b=el(`<button class="opt">${o}</button>`);
+        b.onclick=()=>{
+          const correct = o===q.a;
+          STATE.kana[q.k]={picked:o, correct};
+          $$('.opt',opts).forEach(x=>{x.disabled=true; if(x.textContent===q.a)x.classList.add('correct');});
+          if(!correct) b.classList.add('wrong');
+          speak(q.k);
+          setTimeout(()=>{ i++; show(); }, correct?500:1100);
+        };
+        opts.appendChild(b);
+      });
+      box.appendChild(node);
+    }
+    show();
+    host.appendChild(card);
+  },
+  done(){ return Object.keys(STATE.kana).length >= KANA.length; },
+  hint:"点完 10 个假名 ↑"
+});
+
+/* ---- C4 语法 probe (层③) ---- */
+cards.push({
+  key:"grammar",
+  render(host){
+    const card=el(`
+    <div class="card">
+      <div class="kicker">层③ · 语法 = 全新权重</div>
+      <h2>从零猜一下:语序</h2>
+      <p>语法跟中英<b>无关</b>,是全新系统(这层反而最纯粹,像玩 Toki Pona 从零猜)。下面这句的三块意思给你了,日语会按什么顺序排?先猜,再揭晓。</p>
+
+      <div class="word" style="text-align:left;padding:1rem">
+        <div class="small mut">三块意思:</div>
+        <p style="margin:.3rem 0"><b>猫</b>(neko=猫) ・ <b>が</b>(主语标记) ・ <b>好き</b>(suki=喜欢)</p>
+        <div class="small mut" style="margin-top:.4rem">「我喜欢猫」在日语里,动词「喜欢」放哪?</div>
+        <div class="opts" id="gopts">
+          <button class="opt" data-g="end">放最后</button>
+          <button class="opt" data-g="mid">放中间</button>
+        </div>
+        <div id="greveal" hidden style="margin-top:.7rem">
+          <p class="small"><b>猫 が 好き</b> <span class="romaji">neko ga suki</span> —— 动词在<em>最后</em>(SOV)。日语是「主-宾-动」,跟中文/英文的「主-动-宾」相反。这正是要从零 train 的新系统。<button class="spk" style="vertical-align:middle">🔊</button></p>
+        </div>
+      </div>
+
+      <label class="q">凭直觉,你现在的日语语法?
+        <select id="gselfsel">
+          <option value="">— 选一个 —</option>
+          <option value="none">几乎一片空白</option>
+          <option value="fragments">零碎记得几个(は/が/です之类)</option>
+          <option value="some">能看懂简单句结构</option>
+        </select>
+      </label>
+    </div>`);
+    $$('#gopts .opt',card).forEach(b=> b.onclick=()=>{
+      const correct = b.dataset.g==='end';
+      $$('#gopts .opt',card).forEach(x=>{x.disabled=true; if(x.dataset.g==='end')x.classList.add('correct');});
+      if(!correct) b.classList.add('wrong');
+      $('#greveal',card).hidden=false;
+      speak("猫が好き");
+      STATE.grammar.sov_guess = correct?'correct':'wrong';
+      refreshNav();
+    });
+    $('#greveal .spk',card).onclick=()=>speak("猫が好き");
+    $('#gselfsel',card).onchange=(e)=>{ STATE.grammar.selfLevel=e.target.value; refreshNav(); };
+    host.appendChild(card);
+  },
+  done(){ return !!STATE.grammar.sov_guess && !!STATE.grammar.selfLevel; },
+  hint:"先猜语序、再选自评 ↑"
+});
+
+/* ---- C5 听力 probe (层④) ---- */
+cards.push({
+  key:"listening",
+  render(host){
+    const card=el(`
+    <div class="card">
+      <div class="kicker">层④ · 听力 = 真正的苦工区</div>
+      <h2>用耳朵抓刚学的词</h2>
+      <p>这句话里全是你<b>刚才见过</b>的词。先别看字,点播放,听听能抓到几个。</p>
+
+      <div style="text-align:center;margin:.8rem 0">
+        <button class="btn primary" id="play1">🔊 慢速播放</button>
+      </div>
+      <div id="lrev" hidden>
+        <div class="word" style="margin-top:.4rem">
+          <div class="jp" style="font-size:1.3rem;cursor:default">ゲーム を セーブ した?</div>
+          <div class="reveal" style="min-height:auto"><div class="romaji">gēmu o sēbu shita?</div><div class="gloss">「(游戏)存档了吗?」</div></div>
+        </div>
+        <div style="text-align:center;margin:.7rem 0">
+          <button class="btn" id="play2">⏩ 再听一遍(正常语速)</button>
+        </div>
+        <p class="small mut">注意:真番比这快得多,还带情绪、音高重音、缩约。内置 TTS 只是<em>新兵营</em>,真听力 reps 得来自真番 —— 那是后面 Unit 的 IRL 任务。这里只记你的起点。</p>
+      </div>
+
+      <label class="q">没看字的时候,你听懂了几成?
+        <div class="selfrate" style="justify-content:flex-start" id="lrate">
+          <button class="rate" data-r="most">大半</button>
+          <button class="rate" data-r="some">几个词</button>
+          <button class="rate" data-r="little">几乎没有</button>
+        </div>
+      </label>
+    </div>`);
+    $('#play1',card).onclick=()=>{ speak("ゲームをセーブした", 0.7); $('#lrev',card).hidden=false; };
+    $('#play2',card).onclick=()=> speak("ゲームをセーブした", 1.0);
+    $$('#lrate .rate',card).forEach(b=> b.onclick=()=>{
+      $$('#lrate .rate',card).forEach(x=>x.className='rate');
+      b.classList.add(b.dataset.r==='most'?'sel-yes':b.dataset.r==='some'?'sel-mid':'sel-no');
+      STATE.listening.caught=b.dataset.r; refreshNav();
+    });
+    host.appendChild(card);
+  },
+  done(){ return !!STATE.listening.caught; },
+  hint:"先播放、再标听懂几成 ↑"
+});
+
+/* ---- C6 属性表 + 反馈 + 存档 ---- */
+function score(obj){
+  const vals=Object.values(obj);
+  if(!vals.length) return 0;
+  let s=0; vals.forEach(v=>{ const r=v.rate; s += (r==='yes'||r==='most')?1 : (r==='mid'||r==='some')?0.5 : 0; });
+  return Math.round(100*s/vals.length);
+}
+cards.push({
+  key:"sheet",
+  render(host){
+    const s2=score(STATE.layer2_katakana);
+    const s1=score(STATE.layer1_onyomi);
+    const kn=Object.values(STATE.kana); const kok=kn.filter(x=>x.correct).length;
+    const sk=kn.length?Math.round(100*kok/kn.length):0;
+    const weakKana=Object.entries(STATE.kana).filter(([,v])=>!v.correct).map(([k])=>k);
+    const sl = STATE.listening.caught==='most'?70:STATE.listening.caught==='some'?40:15;
+
+    const card=el(`
+    <div class="card">
+      <div class="kicker">你的起点 · 存档</div>
+      <h1>摸底完成。<br>这是<em>现在的你</em>。</h1>
+
+      <div class="stat"><div class="lab"><span>层② 片假名解码(英语钥匙)</span><span>${s2}</span></div><div class="bar"><i style="width:${s2}%"></i></div></div>
+      <div class="stat"><div class="lab"><span>层① 音读解码(中文钥匙)</span><span>${s1}</span></div><div class="bar"><i style="width:${s1}%"></i></div></div>
+      <div class="stat"><div class="lab"><span>假名本体(镜像易混)</span><span>${sk}</span></div><div class="bar"><i style="width:${sk}%"></i></div></div>
+      <div class="stat"><div class="lab"><span>层④ 听力起点</span><span>${sl}</span></div><div class="bar"><i style="width:${sl}%"></i></div></div>
+
+      <p class="small mut" id="readout"></p>
+
+      <div class="hr"></div>
+      <h2 class="small mut" style="letter-spacing:.04em">给老师的几句话(决定下一关)</h2>
+
+      <label class="q">下一关先攻哪条线?
+        <select id="goalsel">
+          <option value="">— 选一个 —</option>
+          <option value="kana">假名特训(把镜像易混的彻底拿下)</option>
+          <option value="katakana">片假名翻墙词表(最快 quick win,逛日网/买 galge)</option>
+          <option value="onyomi">音读音变规则(飞速解锁汉语词)</option>
+          <option value="grammar">语法从零(全新系统的纯粹乐趣)</option>
+          <option value="listening">听力脱字幕(长线,先搭脚手架)</option>
+        </select>
+      </label>
+
+      <label class="q">这阵子大概什么节奏?
+        <select id="pacesel">
+          <option value="">— 选一个 —</option>
+          <option value="fragment">基本只有碎片时间(地铁/拉屎/等人)</option>
+          <option value="both">碎片为主,偶尔也能坐下来深搞一段</option>
+          <option value="deep">最近能拿出整块时间认真学</option>
+        </select>
+      </label>
+
+      <label class="q">任何想让我调整的(难度/题材/形式)?随便写,会进存档:
+        <textarea id="fb" placeholder="例:片假名太简单了 / 想多点 galge 例句 / TTS 在我手机上不出声 …"></textarea>
+      </label>
+
+      <div class="hr"></div>
+      <p class="small">📌 <b>IRL 小任务(可选,不打卡)</b>:有空时去 pixiv 找一个你喜欢的 tag,试着用假名把它读出来 —— 读不出也没事,记下哪里卡住,下次告诉我。</p>
+
+      <button class="btn primary wide" id="save" style="margin-top:1rem">⬇️ 完成 · 导出存档 telemetry-unit1.json</button>
+      <p class="note" id="savenote">状态不存在这个网页里(<code>file://</code> 隔离会丢)。真相源是这个导出的 json —— 你把它发我,我据它 author 下一个 Unit。下次回来不催进度,接着来就行。</p>
+      <div id="fallback" hidden style="margin-top:.8rem">
+        <button class="btn wide" id="copybtn">📋 复制存档文本(发不出去时用这个)</button>
+        <textarea id="jsonout" readonly style="margin-top:.5rem;min-height:7rem;font-family:ui-monospace,Menlo,monospace;font-size:.72rem"></textarea>
+      </div>
+      <div style="text-align:center;margin-top:.6rem"><a class="home" href="index.html" style="display:inline-block">← 回目录</a></div>
+    </div>`);
+
+    const parts=[];
+    if(s2>=70) parts.push("片假名你<b>近乎免费</b> —— 下一关可直接上翻墙词表薅词。");
+    if(s1>=70) parts.push("音读直觉<b>很强</b>,中文钥匙好使,音变规则会让你爽。");
+    if(sk<70) parts.push(`假名还不稳${weakKana.length?`(尤其 <b>${weakKana.join(' ')}</b>)`:''},这是你真正该先补的洞。`);
+    else parts.push("假名居然挺稳,可以少花点时间在这。");
+    $('#readout',card).innerHTML = "读数:"+ (parts.join(" ") || "数据已记录。");
+
+    $('#goalsel',card).onchange=e=>STATE.selfReport.nextGoal=e.target.value;
+    $('#pacesel',card).onchange=e=>STATE.selfReport.pace=e.target.value;
+    $('#fb',card).oninput=e=>STATE.selfReport.feedback=e.target.value;
+
+    $('#save',card).onclick=async ()=>{
+      STATE.completedAt=Date.now();
+      STATE.scores={katakana:s2, onyomi:s1, kana:sk, listening:sl, weakKana};
+      const text=JSON.stringify(STATE,null,2);
+      const fname="telemetry-unit1.json";
+      let shared=false;
+      // iOS 优先:系统分享面板(存到「文件」App,或直接发给老师)
+      try{
+        if(navigator.canShare){
+          const file=new File([text],fname,{type:"application/json"});
+          if(navigator.canShare({files:[file]})){
+            await navigator.share({files:[file], title:fname});
+            shared=true;
+          }
+        }
+      }catch(e){ /* 用户取消分享也会落到这里,不当失败 */ }
+      // 桌面/安卓:直接下载
+      if(!shared){
+        try{
+          const blob=new Blob([text],{type:"application/json"});
+          const url=URL.createObjectURL(blob);
+          const a=document.createElement('a');
+          a.href=url; a.download=fname; a.click();
+          setTimeout(()=>URL.revokeObjectURL(url),3000);
+        }catch(e){}
+      }
+      // 兜底:永远把文本露出来,可整段复制
+      $('#jsonout',card).value=text;
+      $('#fallback',card).hidden=false;
+      $('#savenote',card).innerHTML='<span class="ok-flash">✓ 存档已生成。</span> 用系统分享 / 下载发给老师即可;手机上发不出去就用下面的「复制」整段贴给我。辛苦了 —— 你已经比你以为的更接近了。';
+    };
+    $('#copybtn',card).onclick=()=>{
+      const ta=$('#jsonout',card); ta.removeAttribute('readonly'); ta.select(); ta.setSelectionRange(0,ta.value.length);
+      let ok=false; try{ ok=document.execCommand('copy'); }catch(e){}
+      try{ if(navigator.clipboard) navigator.clipboard.writeText(ta.value); ok=true; }catch(e){}
+      ta.setAttribute('readonly','');
+      $('#copybtn',card).textContent= ok?'✓ 已复制':'长按文本手动复制';
+    };
+    host.appendChild(card);
+  },
+  last:true
+});
+
+/* ============================================================
+   导航
+   ============================================================ */
+let idx=0;
+const stage=$('#stage'), dots=$('#dots');
+function buildDots(){
+  dots.innerHTML='';
+  cards.forEach(()=> dots.appendChild(el('<div class="dot"></div>')));
+}
+function refreshNav(){
+  $$('.dot').forEach((d,i)=>{ d.className='dot'+(i===idx?' on':i<idx?' done':''); });
+  const c=cards[idx];
+  const ready = !c.done || c.done();
+  const next=$('#nextbtn');
+  if(next){
+    next.disabled=!ready;
+    next.textContent = ready ? (c.last? '完成' : '下一步 →') : (c.hint||'先做完上面 ↑');
+    next.classList.toggle('ghost', !ready);
+  }
+}
+function go(n){
+  idx=Math.max(0,Math.min(cards.length-1,n));
+  stage.innerHTML='';
+  cards[idx].render(stage);
+  const c=cards[idx];
+  const nav=el(`<div class="nav" id="nav">
+    ${idx>0?'<button class="btn ghost" id="prevbtn" style="flex:0 0 28%">← 返回</button>':''}
+    ${c.last?'':'<button class="btn primary" id="nextbtn">下一步 →</button>'}
+  </div>`);
+  stage.appendChild(nav);
+  const pv=$('#prevbtn'); if(pv) pv.onclick=()=>go(idx-1);
+  const nx=$('#nextbtn'); if(nx) nx.onclick=()=>{ const cc=cards[idx]; if(cc.done && !cc.done()) return; go(idx+1); };
+  window.scrollTo(0,0);
+  refreshNav();
+}
+buildDots();
+go(0);
+</script>
+</body>
+</html>

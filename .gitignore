@@ -1,5 +1,7 @@
 # Design configs / curriculum docs stay LOCAL — never publish to the public Pages repo.
 *.md
+# …except the public repo landing page.
+!README.md
 
 # OS cruft
 .DS_Store
