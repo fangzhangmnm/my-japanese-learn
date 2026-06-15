@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="日语·Unit 2">
+<meta name="theme-color" content="#0b0d12">
+<title>Unit 2 · 假名自动化 — 定制日语</title>
+<style>
+  :root{
+    color-scheme: dark;
+    --bg:#0b0d12; --panel:#12151d; --panel2:#161a24; --line:#252b3a;
+    --ink:#e7e9ee; --ink2:#c4c9d4; --mut:#8b93a7; --mut2:#6f7689;
+    --accent:#9ecbff; --good:#7ee0a8; --warn:#ffd479; --bad:#ff8d8d;
+    --r:14px;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}  /* 别让 flex/grid 盖过 hidden */
+  html,body{margin:0;height:100%}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:-apple-system,"PingFang SC","Hiragino Sans",system-ui,sans-serif;
+    -webkit-text-size-adjust:100%;
+    padding:max(14px,env(safe-area-inset-top)) 14px max(20px,env(safe-area-inset-bottom));
+  }
+  .wrap{max-width:33rem;margin:0 auto}
+
+  .top{display:flex;align-items:center;gap:.5rem;margin:.2rem 0 1rem}
+  .top .name{font-size:.78rem;color:var(--mut);letter-spacing:.03em}
+  .top .home{font-size:.78rem;color:var(--accent);text-decoration:none;border:1px solid var(--line);border-radius:8px;padding:.18rem .5rem}
+  .top .home:active{transform:scale(.96)}
+  .top .save-sm{margin-left:auto;font-size:.78rem;color:var(--accent);background:transparent;border:1px solid var(--line);border-radius:8px;padding:.18rem .5rem;cursor:pointer;font-family:inherit}
+  .top .save-sm:active{transform:scale(.96)}
+
+  .card{
+    background:var(--panel); border:1px solid var(--line);
+    border-radius:var(--r); padding:18px 16px 20px;
+    animation:pop .2s ease;
+  }
+  @keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .kicker{font-size:.74rem;letter-spacing:.06em;color:var(--accent);text-transform:uppercase;margin-bottom:.5rem}
+  h1{font-size:1.4rem;line-height:1.3;margin:.1rem 0 .7rem}
+  h2{font-size:1.12rem;margin:.1rem 0 .6rem}
+  p{color:var(--ink2);line-height:1.6;margin:.5rem 0}
+  .mut{color:var(--mut)}
+  .small{font-size:.85rem}
+  .hr{height:1px;background:var(--line);margin:1rem 0;border:0}
+  b,strong{color:var(--ink)}
+  em{color:var(--accent);font-style:normal}
+
+  .btn{
+    -webkit-appearance:none;appearance:none;cursor:pointer;
+    display:inline-flex;align-items:center;justify-content:center;gap:.4rem;
+    background:var(--panel2);color:var(--ink);border:1px solid var(--line);
+    border-radius:11px;padding:.7rem 1rem;font-size:1rem;font-family:inherit;
+    transition:.12s; touch-action:manipulation;
+  }
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:#1d2c44;border-color:#345080;color:#dbe9ff}
+  .btn.wide{width:100%}
+  .btn.ghost{background:transparent}
+  .btn:disabled{cursor:default;opacity:.5}
+  .spk{
+    border:1px solid var(--line);background:var(--panel2);border-radius:9px;
+    width:2.2rem;height:2.2rem;display:inline-flex;align-items:center;justify-content:center;
+    cursor:pointer;font-size:1.05rem;flex:none;touch-action:manipulation;color:var(--ink);
+  }
+  .spk:active{transform:scale(.92)}
+
+  /* ===== HOME ===== */
+  .hero{text-align:center;margin:.2rem 0 1rem}
+  .hero .big{font-size:2.1rem;font-weight:700;letter-spacing:.02em}
+  .hero .sub{color:var(--mut);font-size:.9rem;margin-top:.2rem}
+  .progress-wrap{margin:1rem 0}
+  .pct-row{display:flex;justify-content:space-between;align-items:baseline;font-size:.88rem;margin-bottom:.3rem}
+  .pct-row .n{color:var(--accent);font-weight:600;font-size:1.05rem}
+  .bar{height:9px;background:#222838;border-radius:6px;overflow:hidden}
+  .bar i{display:block;height:100%;background:linear-gradient(90deg,#345080,#9ecbff);border-radius:6px;transition:width .5s ease}
+  .splitbar{display:flex;gap:.55rem;margin-top:.55rem}
+  .splitbar .col{flex:1}
+  .splitbar .lab{font-size:.74rem;color:var(--mut);margin-bottom:.2rem;display:flex;justify-content:space-between}
+
+  .modes{display:grid;grid-template-columns:1fr 1fr;gap:.55rem;margin:1rem 0 .4rem}
+  .mode{
+    background:var(--panel2);border:1px solid var(--line);border-radius:12px;
+    padding:.85rem .8rem;text-align:left;cursor:pointer;font-family:inherit;color:var(--ink);
+    transition:.12s;touch-action:manipulation;
+  }
+  .mode:active{transform:scale(.98)}
+  .mode:disabled{opacity:.4;cursor:default}
+  .mode .ic{font-size:1.25rem}
+  .mode .t{font-weight:600;font-size:.98rem;margin-top:.25rem}
+  .mode .d{color:var(--mut);font-size:.76rem;line-height:1.4;margin-top:.15rem}
+  .mode.full{grid-column:1 / -1}
+  .mode.go{background:#1d2c44;border-color:#345080}
+
+  .weakbox{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:.7rem .8rem;margin-top:.8rem}
+  .weakbox .h{font-size:.78rem;color:var(--mut);letter-spacing:.04em;text-transform:uppercase;margin-bottom:.4rem}
+  .weaklist{display:flex;flex-wrap:wrap;gap:.35rem}
+  .wk{font-size:1.15rem;background:#2a1a1a;border:1px solid #5a2f2f;border-radius:8px;padding:.15rem .5rem;color:#ffb4b4}
+  .wk.warn{background:#33300f;border-color:#6a5e20;color:var(--warn)}
+
+  /* ===== TEACH ===== */
+  .glyph-big{font-size:5.5rem;line-height:1;text-align:center;margin:.4rem 0 .2rem;letter-spacing:.02em}
+  .glyph-row{text-align:center;color:var(--mut);font-size:.85rem}
+  .kindtag{display:inline-block;font-size:.7rem;border:1px solid var(--line);border-radius:999px;padding:.1rem .5rem;color:var(--accent)}
+  .kindtag.kata{color:var(--warn);border-color:#5a4a1a}
+  .romaji-big{text-align:center;font-size:1.6rem;color:var(--accent);margin:.3rem 0;letter-spacing:.04em}
+  .mnemonic{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:.7rem .8rem;margin:.6rem 0;font-size:.92rem;color:var(--ink2);line-height:1.55}
+  .teach-nav{display:flex;gap:.5rem;margin-top:.9rem}
+  .teach-nav .btn{flex:1}
+  .batchdot{display:flex;gap:5px;justify-content:center;margin:.5rem 0}
+  .batchdot .d{width:7px;height:7px;border-radius:50%;background:#2a3144}
+  .batchdot .d.on{background:var(--accent)}
+  .batchdot .d.done{background:#37506e}
+
+  /* ===== DRILL / QUIZ ===== */
+  .quiz-head{display:flex;align-items:center;gap:.5rem;font-size:.82rem;color:var(--mut);margin-bottom:.3rem}
+  .quiz-head .timer{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--mut2)}
+  .quiz-glyph{font-size:5rem;text-align:center;line-height:1.1;margin:.4rem 0 .3rem;letter-spacing:.04em;min-height:5rem}
+  .quiz-prompt{text-align:center;color:var(--mut);font-size:.85rem;margin-bottom:.6rem}
+  .answer-in{display:flex;gap:.5rem;margin:.5rem 0}
+  .answer-in input{
+    flex:1;background:var(--panel2);color:var(--ink);border:1px solid var(--line);
+    border-radius:10px;padding:.7rem;font-family:inherit;font-size:1.2rem;text-align:center;
+    letter-spacing:.06em;
+  }
+  .answer-in input:focus{outline:none;border-color:#345080}
+  .opts{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.5rem}
+  .opt{
+    border:1px solid var(--line);background:var(--panel2);border-radius:10px;
+    padding:.85rem;font-size:1.15rem;cursor:pointer;text-align:center;font-family:inherit;color:var(--ink);
+    transition:.1s;touch-action:manipulation;letter-spacing:.04em;
+  }
+  .opt:active{transform:scale(.97)}
+  .opt.correct{background:#16341f;border-color:#2f6b43;color:var(--good)}
+  .opt.wrong{background:#3a1717;border-color:#7a2f2f;color:var(--bad)}
+  .opt[disabled]{opacity:.55}
+  .feedback{text-align:center;min-height:1.6rem;margin-top:.5rem;font-size:1rem}
+  .feedback .ans{color:var(--accent);font-weight:600}
+  .feedback.ok{color:var(--good)}
+  .feedback.no{color:var(--bad)}
+  .modeswitch{display:flex;justify-content:center;gap:.4rem;margin-top:.7rem}
+  .toggle{font-size:.76rem;color:var(--mut);background:transparent;border:1px solid var(--line);border-radius:999px;padding:.2rem .6rem;cursor:pointer;font-family:inherit}
+  .toggle.on{color:var(--accent);border-color:#345080}
+  .sess-prog{height:6px;background:#222838;border-radius:4px;overflow:hidden;margin:.4rem 0 .2rem}
+  .sess-prog i{display:block;height:100%;background:#345080;transition:width .4s ease}
+
+  /* ===== TRACE ===== */
+  .trace-stage{position:relative;width:100%;max-width:300px;margin:.5rem auto;aspect-ratio:1/1;
+    background:var(--panel2);border:1px solid var(--line);border-radius:14px;overflow:hidden;touch-action:none}
+  .trace-ghost{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-size:13rem;line-height:1;color:#2b3344;pointer-events:none;user-select:none}
+  .trace-stage canvas{position:absolute;inset:0;width:100%;height:100%}
+  .trace-cross{position:absolute;inset:0;pointer-events:none}
+  .trace-cross::before,.trace-cross::after{content:"";position:absolute;background:#1c2230}
+  .trace-cross::before{left:50%;top:0;bottom:0;width:1px}
+  .trace-cross::after{top:50%;left:0;right:0;height:1px}
+
+  /* ===== CHIRAL TIP / 对策框 ===== */
+  .tipbox{background:var(--panel2);border:1px solid var(--line);border-radius:10px;
+    padding:.65rem .8rem;margin-top:.6rem;font-size:.9rem;color:var(--ink2);line-height:1.55}
+  .tipbox .badge{display:inline-block;font-size:.68rem;border-radius:999px;padding:.08rem .5rem;
+    margin-right:.4rem;letter-spacing:.03em;vertical-align:middle}
+  .tipbox .badge.mirror{color:#bcd2ff;border:1px solid #345080;background:#16203a}
+  .tipbox .badge.danger{color:#ffb4b4;border:1px solid #7a2f2f;background:#2a1414}
+  .tipbox .lab{font-size:.72rem;color:var(--mut);letter-spacing:.04em;text-transform:uppercase}
+
+  textarea,select{
+    width:100%;background:var(--panel2);color:var(--ink);border:1px solid var(--line);
+    border-radius:10px;padding:.6rem;font-family:inherit;font-size:.95rem;margin-top:.4rem;
+  }
+  textarea{min-height:4rem;resize:vertical}
+  label.q{display:block;margin-top:.9rem;font-size:.92rem;color:var(--ink2)}
+  .note{color:var(--mut2);font-size:.82rem;line-height:1.55;margin-top:1.2rem}
+  code{background:var(--panel2);padding:.1rem .35rem;border-radius:4px;font-size:.85em}
+  .ok-flash{color:var(--good)}
+  .center{text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <a class="home" href="index.html">← 目录</a>
+    <span class="name">Unit 2 · 假名自动化</span>
+    <button class="save-sm" id="topSave">⬇️ 存档</button>
+  </div>
+  <div id="stage"></div>
+</div>
+
+<script>
+/* ============================================================
+   Unit 2 · 假名自动化 — 自适应假名 trainer
+   平假名46 + 片假名46 全覆盖,交错;入门映射 / 认读(反拐杖) /
+   chiral 对撞 / 听写产出 / 默写。SRS-lite 调度。
+   状态不绑文件:全程内存(sessionStorage 仅做中途恢复),
+   真相源 = 下载的 telemetry-unit2.json。
+   ============================================================ */
+
+/* ---------- helpers ---------- */
+const el = (h)=>{ const t=document.createElement('template'); t.innerHTML=h.trim(); return t.content.firstChild; };
+const $ = (s,r)=>(r||document).querySelector(s);
+const $$ = (s,r)=>[...(r||document).querySelectorAll(s)];
+const now = ()=>Date.now();
+const shuffle = (arr)=>arr.map(o=>[o,Math.random()]).sort((a,b)=>a[1]-b[1]).map(x=>x[0]);
+
+/* ---------- TTS (守 off-grid) ---------- */
+let jaVoice = null;
+function pickVoice(){
+  const vs = window.speechSynthesis ? speechSynthesis.getVoices() : [];
+  jaVoice = vs.find(v=>/ja[-_]?JP/i.test(v.lang)) || vs.find(v=>/^ja/i.test(v.lang)) || null;
+}
+if(window.speechSynthesis){ pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+function speak(text, rate){
+  if(!window.speechSynthesis) return;
+  try{
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "ja-JP"; u.rate = rate||0.85; u.pitch = 1;
+    if(jaVoice) u.voice = jaVoice;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+
+/* ============================================================
+   假名数据 — 平假名46 + 片假名46(Hepburn)
+   romaji 双核:し=shi ち=chi つ=tsu ふ=fu を=wo ん=n(片假名同)
+   mn = 中文助记钩子(形/音联想,入门映射用)
+   ============================================================ */
+const GOJUON = [
+  // [hira, kata, romaji, mnemonic]
+  ["あ","ア","a","「安」的草头 — 张嘴喊 a。片ア像带尾巴的 person 张嘴。"],
+  ["い","イ","i","两竖像两根「以」筷子 — ii(好)。片イ是一撇一竖。"],
+  ["う","ウ","u","像侧脸吹气 u~。片ウ头上一点像帽子。"],
+  ["え","エ","e","像游泳的人换气 e。片エ是「工」字 — 工=エ。"],
+  ["お","オ","o","和「あ」很像,多一勾,喊 o。片オ像带钩的十。"],
+  ["か","カ","ka","「加」的力字旁 — ka。片カ就是「力」少一笔。"],
+  ["き","キ","ki","像钥匙 key=ki。片キ三横一竖。"],
+  ["く","ク","ku","像鸟嘴张开 ku-。片ク像被啃了一口。"],
+  ["け","ケ","ke","像「介」的左半 — ke。片ケ类似。"],
+  ["こ","コ","ko","两横,像盒子 — ko。片コ是个开口方框。"],
+  ["さ","サ","sa","像「左」起笔 — sa。片サ三竖加一横。"],
+  ["し","シ","shi","一笔弯钩,像鱼钩 — shi(注意不是 si)。片シ三点偏横排。"],
+  ["す","ス","su","一个圈带尾,像吹 su-。片ス两笔交叉。"],
+  ["せ","セ","se","像「世」字 — se。片セ类似世的简写。"],
+  ["そ","ソ","so","曲折一笔 — so。片ソ两点偏竖(对照シ)。"],
+  ["た","タ","ta","像「太」的左半 — ta。片タ像夕。"],
+  ["ち","チ","chi","像反写的 5 — chi(不是 ti)。片チ像千。"],
+  ["つ","ツ","tsu","一个钩,像浪 — tsu(不是 tu)。片ツ三点偏竖(对照シ)。"],
+  ["て","テ","te","像「天」起笔 — te。片テ三横一撇。"],
+  ["と","ト","to","一竖一点 — to。片ト就是竖加点。"],
+  ["な","ナ","na","像「奈」上半 — na。片ナ是十字带撇。"],
+  ["に","ニ","ni","像「二」 — ni。片ニ就是两横。"],
+  ["ぬ","ヌ","nu","打个结的样子 — nu。片ヌ两笔交叉(对照ス)。"],
+  ["ね","ネ","ne","左竖右环 — ne(对照れ/わ)。片ネ像礻旁。"],
+  ["の","ノ","no","一个大圈 — no(最好记)。片ノ就是一撇。"],
+  ["は","ハ","ha","像「八」加竖 — ha(对照ほ/ま)。片ハ就是八。"],
+  ["ひ","ヒ","hi","像鼻子侧面 — hi。片ヒ是匕。"],
+  ["ふ","フ","fu","四笔散开,像吹气 — fu(不是 hu)。片フ就一钩。"],
+  ["へ","ヘ","he","一个屋顶 — he。平片几乎一样。"],
+  ["ほ","ホ","ho","は加一横 — ho(对照は)。片ホ像木。"],
+  ["ま","マ","ma","横竖加环 — ma(对照は/ほ)。片マ像折角。"],
+  ["み","ミ","mi","像数字 3 弯 — mi。片ミ三点斜排。"],
+  ["む","ム","mu","带个小尾巴 — mu。片ム是个角。"],
+  ["め","メ","me","打叉带环 — me(对照ぬ)。片メ就是叉。"],
+  ["も","モ","mo","像鱼钩加两横 — mo(对照は族)。片モ像毛。"],
+  ["や","ヤ","ya","像甩鞭 — ya。片ヤ类似。"],
+  ["ゆ","ユ","yu","像鱼带钩 — yu。片ユ是个开口。"],
+  ["よ","ヨ","yo","像「与」 — yo。片ヨ三横竖收。"],
+  ["ら","ラ","ra","一点一弯 — ra。片ラ像横折。"],
+  ["り","リ","ri","两竖 — ri(对照い)。片リ就是两竖。"],
+  ["る","ル","ru","结尾打圈 — ru(对照ろ:る有圈)。片ル两笔。"],
+  ["れ","レ","re","左竖右伸 — re(对照ね/わ)。片レ就一钩。"],
+  ["ろ","ロ","ro","像 3 不打圈 — ro(对照る)。片ロ是方框。"],
+  ["わ","ワ","wa","左竖右环 — wa(对照ね/れ)。片ワ像开口框。"],
+  ["を","ヲ","wo","只做助词 — wo/o。片ヲ少见。"],
+  ["ん","ン","n","唯一鼻音收尾 — n(对照ソ:ン点偏横起笔向上)。"]
+];
+
+/* 构建 92 条 kana item */
+const KANA = [];
+GOJUON.forEach(([h,k,ro,mn])=>{
+  KANA.push({glyph:h, kind:"hira", romaji:ro, mn});
+  KANA.push({glyph:k, kind:"kata", romaji:ro, mn});
+});
+const BY_GLYPH = {};
+KANA.forEach(it=>{ BY_GLYPH[it.glyph]=it; });
+
+/* chiral 易混组(片+平)— 带区分对策 tip */
+const CHIRAL = [
+  // 平假名
+  {set:["さ","ち"], type:"mirror", tip:"真镜像。さ(sa)底钩朝右(像反写的5);ち(chi)底钩朝左。记『さ右、ち左』。"},
+  {set:["き","さ"], type:"similar", tip:"き上面两横,さ只有一横;き多一笔。"},
+  {set:["る","ろ","そ"], type:"similar", tip:"る底部打圈;ろ底部开口收笔;そ顶上多一道Z折。"},
+  {set:["ね","れ","わ"], type:"similar", tip:"看右下尾巴:ね打小圈;れ向右上勾出(像r腿);わ向内弯回不打圈。"},
+  {set:["は","ほ"], type:"similar", tip:"ほ比は右上多一横;ほ多一笔。"},
+  {set:["は","ま"], type:"similar", tip:"は左边有独立一竖,ま没有;有竖=は。"},
+  {set:["あ","お"], type:"similar", tip:"お右上有一点,あ没有;记『お有点、あ无点』。"},
+  {set:["ぬ","め"], type:"similar", tip:"ぬ末尾多甩一个打结小圈,め没有;ぬ多一个结。"},
+  {set:["い","り"], type:"similar", tip:"い两笔分离、左短;り两笔靠拢、更瘦更竖。"},
+  {set:["こ","て"], type:"similar", tip:"こ是上下两横(两笔);て是一笔横转钩。"},
+  {set:["た","な"], type:"similar", tip:"な右下收成打结小圈;た右下是分离两笔无圈。"},
+  {set:["ち","ら"], type:"similar", tip:"ち顶上有一横盖头,ら没有;ち多顶横。"},
+  // 片假名
+  {set:["シ","ツ"], type:"mirror", tip:"看长笔方向:シ两点竖叠在左、长笔由下往上挑(指4点);ツ两点横排在顶、长笔由上往下扫(指2点)。"},
+  {set:["ン","ソ"], type:"mirror", tip:"同口诀:ン长笔由下往上(4点、偏横像n);ソ长笔由上往下(2点、偏竖)。"},
+  {set:["ノ","ソ","ン"], type:"similar", tip:"ノ只一撇;ソ/ン在ノ左上加一点,再按上挑/下扫分ン与ソ。"},
+  {set:["ク","タ","ヌ"], type:"similar", tip:"ク最简;タ在ク内加一横;ヌ在ク下加一捺(右下伸脚)。按笔数分。"},
+  {set:["ウ","ワ","フ"], type:"similar", tip:"フ一笔钩;ワ加顶横成框;ウ再加一点。『ウ有点、ワ无点』。"},
+  {set:["ア","マ"], type:"mirror", tip:"ア下笔向左下勾;マ下笔向右下伸。记『ア左、マ右』。"},
+  {set:["チ","テ"], type:"similar", tip:"看顶部:两横贯穿=チ(像千);一横+下フ钩=テ。"},
+  {set:["コ","ユ"], type:"similar", tip:"コ闭口ㄈ形方角;ユ底横向右伸出超过竖(多一脚)。"},
+  {set:["ス","ヌ"], type:"similar", tip:"ヌ顶上多一横起笔(像又);ス没有。ヌ多一笔。"},
+  {set:["ナ","メ"], type:"similar", tip:"ナ是直角十字(横+竖撇);メ是斜叉X。"},
+  {set:["ク","ケ"], type:"similar", tip:"ケ左侧多一短撇;ケ比ク多一笔。"},
+  {set:["フ","ヘ","レ"], type:"similar", tip:"フ顶横转下钩;ヘ中间尖浅角(像屋顶∧);レ先下后右上挑(像勾)。"},
+  {set:["ン","ソ","リ"], type:"similar", tip:"リ是两条并列竖笔;ン/ソ是一点+一长斜笔。"},
+  // 危险:跨平/片、形近但音不同
+  {set:["つ","フ"], type:"danger", tip:"⚠音不同!つ(tsu,平)圆扁开口朝下;フ(fu,片)方瘦开口朝左下。"},
+  {set:["し","レ"], type:"danger", tip:"⚠音不同!し(shi,平)长瘦、向左下弯再上挑;レ(re,片)矮、先下后右上挑。"},
+  {set:["せ","サ"], type:"danger", tip:"⚠音不同(se vs sa)!せ(平)末竖带向上小尾勾;サ(片)右竖直收。"},
+  {set:["こ","ニ"], type:"danger", tip:"⚠音不同(ko vs ni)!こ(平)两横带弧靠拢;ニ(片)两横平直、上短下长。"},
+  {set:["う","ラ"], type:"danger", tip:"⚠音不同(u vs ra)!う(平)顶上是点;ラ(片)顶上是横。"},
+];
+/* 每个 glyph 的混淆同伴(用于干扰项) */
+const CONFUSE = {};
+CHIRAL.forEach(entry=>entry.set.forEach(g=>{
+  CONFUSE[g]=CONFUSE[g]||new Set();
+  entry.set.forEach(o=>{ if(o!==g) CONFUSE[g].add(o); });
+}));
+/* glyph -> 其所在 mirror/danger 组的 entry(教学首遇时给对策) */
+const CHIRAL_TIP = {};
+CHIRAL.forEach(entry=>{
+  if(entry.type==='mirror' || entry.type==='danger'){
+    entry.set.forEach(g=>{ if(!CHIRAL_TIP[g]) CHIRAL_TIP[g]=entry; });
+  }
+});
+
+/* ============================================================
+   STATE — 真相源(导出 json);kana mastery 0..1
+   ============================================================ */
+const MASTERY_THRESHOLD = 0.8;   // 达到即「掌握」
+const STATE = {
+  unit: "unit2",
+  schema: 1,
+  startedAt: now(),
+  completedAt: null,
+  kana: {},   // glyph -> {kind,romaji,seen,correct,wrong,bestMs,mastery,taught}
+  weak: [],
+  chiralConfusions: [],
+  session: { teach:0, recognize:0, chiral:0, produce:0, write:0, totalAnswered:0 },
+  selfReport: { pace:"", feedback:"" }
+};
+KANA.forEach(it=>{
+  STATE.kana[it.glyph] = {
+    kind: it.kind, romaji: it.romaji,
+    seen:0, correct:0, wrong:0, bestMs:null, mastery:0, taught:false
+  };
+});
+
+/* 中途恢复(便利,不是真相源) */
+const SS_KEY = "unit2-resume";
+function persist(){ try{ sessionStorage.setItem(SS_KEY, JSON.stringify(STATE)); }catch(e){} }
+function restore(){
+  try{
+    const raw = sessionStorage.getItem(SS_KEY);
+    if(!raw) return;
+    const o = JSON.parse(raw);
+    if(o && o.unit==="unit2" && o.kana){
+      // 只合并已知 glyph,防 schema 漂移
+      Object.keys(STATE.kana).forEach(g=>{ if(o.kana[g]) STATE.kana[g]=Object.assign(STATE.kana[g], o.kana[g]); });
+      if(o.session) STATE.session = Object.assign(STATE.session, o.session);
+      if(o.chiralConfusions) STATE.chiralConfusions = o.chiralConfusions;
+      if(o.startedAt) STATE.startedAt = o.startedAt;
+      if(o.selfReport) STATE.selfReport = Object.assign(STATE.selfReport, o.selfReport);
+    }
+  }catch(e){}
+}
+restore();
+
+/* ---------- 掌握度更新(Ebbinghaus-lite) ----------
+   答对快 → mastery 上升较多;答对慢 → 小升;答错 → 砍半再降。 */
+const FAST_MS = 2500;
+function gradeAnswer(glyph, correct, ms){
+  const s = STATE.kana[glyph];
+  s.seen++;
+  if(correct){
+    s.correct++;
+    if(s.bestMs==null || ms < s.bestMs) s.bestMs = ms;
+    const fast = ms <= FAST_MS;
+    s.mastery = Math.min(1, s.mastery + (fast ? 0.34 : 0.18));
+  }else{
+    s.wrong++;
+    s.mastery = Math.max(0, s.mastery*0.5 - 0.1);
+  }
+  STATE.session.totalAnswered++;
+  recomputeWeak();
+  persist();
+}
+function recomputeWeak(){
+  STATE.weak = Object.entries(STATE.kana)
+    .filter(([,v])=> v.taught && v.mastery < 0.5)
+    .sort((a,b)=>a[1].mastery-b[1].mastery)
+    .map(([g])=>g);
+}
+function masteredCount(){ return Object.values(STATE.kana).filter(v=>v.mastery>=MASTERY_THRESHOLD).length; }
+function taughtCount(){ return Object.values(STATE.kana).filter(v=>v.taught).length; }
+
+/* ---------- SRS-lite 会话队列 ----------
+   从「已教 (taught)」里抽 item;未达标的优先、且按 mastery 升序加权;
+   答错/慢的下一轮更快回来(通过权重)。每次抽一个。 */
+function pickDrillGlyph(excludeGlyph){
+  const pool = Object.entries(STATE.kana).filter(([g,v])=> v.taught && (!excludeGlyph || g!==excludeGlyph));
+  if(!pool.length) return null;
+  // 权重:mastery 越低权重越高;已掌握的给极小残留权重(偶尔复习)
+  const weighted = pool.map(([g,v])=>{
+    let w = (1 - Math.min(v.mastery, MASTERY_THRESHOLD)/MASTERY_THRESHOLD); // 0..1
+    w = w*w*3 + 0.04;
+    return [g, w];
+  });
+  const total = weighted.reduce((s,x)=>s+x[1],0);
+  let r = Math.random()*total;
+  for(const [g,w] of weighted){ r-=w; if(r<=0) return g; }
+  return weighted[weighted.length-1][0];
+}
+
+/* 引入下一批未教 kana(交错 hira+kata),~batch 个 */
+function nextTeachBatch(size){
+  const untaught = KANA.filter(it=> !STATE.kana[it.glyph].taught);
+  return untaught.slice(0, size||6);
+}
+
+/* 生成 MC 选项:优先混淆同伴,补足到 4 个,含正确答案 */
+function buildOptions(glyph){
+  const correct = STATE.kana[glyph].romaji;
+  const set = new Set([correct]);
+  const conf = CONFUSE[glyph];
+  if(conf){ conf.forEach(g=>{ if(BY_GLYPH[g]) set.add(BY_GLYPH[g].romaji); }); }
+  // 补足:从全表随机 romaji
+  const allRo = KANA.map(it=>it.romaji);
+  let guard=0;
+  while(set.size<4 && guard++<200){ set.add(allRo[Math.floor(Math.random()*allRo.length)]); }
+  return shuffle([...set].slice(0,4));
+}
+
+/* ============================================================
+   导出 telemetry(iOS 三级:share → download → 复制兜底)
+   ============================================================ */
+function buildTelemetry(){
+  recomputeWeak();
+  STATE.completedAt = now();
+  return JSON.stringify(STATE, null, 2);
+}
+async function exportTelemetry(opts){
+  const text = buildTelemetry();
+  const fname = "telemetry-unit2.json";
+  let shared=false;
+  try{
+    if(navigator.canShare){
+      const file=new File([text],fname,{type:"application/json"});
+      if(navigator.canShare({files:[file]})){ await navigator.share({files:[file], title:fname}); shared=true; }
+    }
+  }catch(e){ /* 用户取消也落这里 */ }
+  if(!shared){
+    try{
+      const url=URL.createObjectURL(new Blob([text],{type:"application/json"}));
+      const a=document.createElement('a'); a.href=url; a.download=fname; a.click();
+      setTimeout(()=>URL.revokeObjectURL(url),3000);
+    }catch(e){}
+  }
+  // 兜底文本:渲染在调用方提供的容器
+  if(opts && opts.host){ showFallback(opts.host, text); }
+  return text;
+}
+function showFallback(host, text){
+  let fb = $('#fallback', host);
+  if(!fb){
+    fb = el(`<div id="fallback" style="margin-top:.8rem">
+      <button class="btn wide" id="copybtn">📋 复制存档文本(发不出去时用这个)</button>
+      <textarea id="jsonout" readonly style="margin-top:.5rem;min-height:6rem;font-family:ui-monospace,Menlo,monospace;font-size:.7rem"></textarea>
+    </div>`);
+    host.appendChild(fb);
+    $('#copybtn',fb).onclick=()=>{
+      const ta=$('#jsonout',fb); ta.removeAttribute('readonly'); ta.select(); ta.setSelectionRange(0,ta.value.length);
+      let ok=false; try{ ok=document.execCommand('copy'); }catch(e){}
+      try{ if(navigator.clipboard) navigator.clipboard.writeText(ta.value); ok=true; }catch(e){}
+      ta.setAttribute('readonly','');
+      $('#copybtn',fb).textContent= ok?'✓ 已复制':'长按文本手动复制';
+    };
+  }
+  $('#jsonout',fb).value=text;
+  fb.hidden=false;
+}
+
+/* ============================================================
+   视图路由
+   ============================================================ */
+const stage = $('#stage');
+function clearStage(){ stage.innerHTML=''; window.scrollTo(0,0); }
+
+/* ---------- 自评小问卷(导出前) ---------- */
+let askedSelf=false;
+function maybeAskSelfReport(host, after){
+  if(askedSelf || STATE.selfReport.pace || STATE.selfReport.feedback){ after(); return; }
+  const card = el(`<div class="card" style="margin-top:.8rem" id="selfq">
+    <div class="kicker">导出前 · 给老师两句话(可跳过)</div>
+    <label class="q">这阵子大概什么节奏?
+      <select id="pace">
+        <option value="">— 选一个 —</option>
+        <option value="fragment">基本只有碎片时间(地铁/等人/拉屎)</option>
+        <option value="both">碎片为主,偶尔能坐下来深搞一段</option>
+        <option value="deep">最近能拿出整块时间认真练</option>
+      </select>
+    </label>
+    <label class="q">哪几个字最让你头疼?或任何想调整的(难度/题材/形式)?
+      <textarea id="fb" placeholder="例:シツン三个我永远分不清 / 默写自检很有用 / 想要片假名外来语版的 drill …"></textarea>
+    </label>
+    <div class="teach-nav">
+      <button class="btn ghost" id="skip">跳过</button>
+      <button class="btn primary" id="ok">记下,继续导出</button>
+    </div>
+  </div>`);
+  host.appendChild(card);
+  try{ card.scrollIntoView({behavior:'smooth', block:'center'}); }catch(e){}
+  $('#skip',card).onclick=()=>{ askedSelf=true; card.remove(); after(); };
+  $('#ok',card).onclick=()=>{
+    STATE.selfReport.pace = $('#pace',card).value;
+    STATE.selfReport.feedback = $('#fb',card).value;
+    askedSelf=true; persist(); card.remove(); after();
+  };
+}
+function doExport(host){ maybeAskSelfReport(host, ()=>exportTelemetry({host})); }
+$('#topSave').onclick = ()=> doExport($('#stage'));
+
+/* ---------- HOME ---------- */
+function renderHome(){
+  clearStage();
+  const mastered = masteredCount();
+  const taught = taughtCount();
+  const hiraM = Object.values(STATE.kana).filter(v=>v.kind==="hira"&&v.mastery>=MASTERY_THRESHOLD).length;
+  const kataM = Object.values(STATE.kana).filter(v=>v.kind==="kata"&&v.mastery>=MASTERY_THRESHOLD).length;
+  recomputeWeak();
+  const hasTaught = taught>0;
+
+  const card = el(`
+  <div class="card">
+    <div class="hero">
+      <div class="kicker">Unit 2 · 低级皮层映射特训</div>
+      <div class="big">假名自动化</div>
+      <div class="sub">平假名 + 片假名 全 92 个 · 反拐杖认读 · 默写 · 碎片友好</div>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="pct-row"><span>已掌握</span><span><span class="n">${mastered}</span> / ${KANA.length}</span></div>
+      <div class="bar"><i style="width:${Math.round(100*mastered/KANA.length)}%"></i></div>
+      <div class="splitbar">
+        <div class="col"><div class="lab"><span>平假名</span><span>${hiraM}/46</span></div><div class="bar"><i style="width:${Math.round(100*hiraM/46)}%"></i></div></div>
+        <div class="col"><div class="lab"><span>片假名</span><span>${kataM}/46</span></div><div class="bar"><i style="width:${Math.round(100*kataM/46)}%"></i></div></div>
+      </div>
+    </div>
+
+    <div class="modes">
+      <button class="mode go full" id="mGo">
+        <span class="ic">▶</span>
+        <div class="t">${hasTaught? '继续训练' : '开始训练'}</div>
+        <div class="d">${hasTaught? '自适应混合:先教没学过的,再认读已学的弱项' : '从第一批假名学起(每批约6个,平/片交错)'}</div>
+      </button>
+      <button class="mode" id="mTeach">
+        <span class="ic">📖</span>
+        <div class="t">入门映射</div>
+        <div class="d">大字 + 发音 + 助记 + 描一遍</div>
+      </button>
+      <button class="mode" id="mRecog" ${hasTaught?'':'disabled'}>
+        <span class="ic">⚡</span>
+        <div class="t">认读 drill</div>
+        <div class="d">看字打/选音 · 计时 · 反拐杖</div>
+      </button>
+      <button class="mode" id="mChiral" ${hasTaught?'':'disabled'}>
+        <span class="ic">🔀</span>
+        <div class="t">对撞 · 易混</div>
+        <div class="d">シ/ツ ね/れ/わ … 专攻镜像</div>
+      </button>
+      <button class="mode" id="mProduce" ${hasTaught?'':'disabled'}>
+        <span class="ic">🎧</span>
+        <div class="t">听写产出</div>
+        <div class="d">听音 → 选对应假名(反向)</div>
+      </button>
+      <button class="mode" id="mTrace">
+        <span class="ic">✍️</span>
+        <div class="t">默写 · 凭记忆写</div>
+        <div class="d">听音/看罗马字 → 默写假名 → 对答案自检</div>
+      </button>
+    </div>
+
+    <div class="weakbox" id="weakbox" ${STATE.weak.length?'':'hidden'}>
+      <div class="h">该补的弱项</div>
+      <div class="weaklist" id="weaklist"></div>
+    </div>
+
+    <button class="btn primary wide" id="homeSave" style="margin-top:1rem">⬇️ 导出存档 telemetry-unit2.json</button>
+    <p class="note">状态不存网页里(<code>file://</code> 隔离会丢)。真相源是这个导出的 json —— 发给老师,据它出下一关。<br>📱 也可以随手存:右上角「存档」。不催进度,你回来就接上。</p>
+    <div class="center" style="margin-top:.5rem"><a class="home" href="index.html">← 回目录</a></div>
+  </div>`);
+
+  if(STATE.weak.length){
+    const wl = $('#weaklist', card);
+    STATE.weak.slice(0,18).forEach(g=>{
+      const m = STATE.kana[g].mastery;
+      wl.appendChild(el(`<span class="wk ${m>=0.3?'warn':''}">${g}</span>`));
+    });
+  }
+
+  $('#mGo',card).onclick    = ()=> startSession();
+  $('#mTeach',card).onclick = ()=> renderTeach(null);
+  $('#mRecog',card).onclick = ()=> { if(hasTaught) renderDrill('recognize'); };
+  $('#mChiral',card).onclick= ()=> { if(hasTaught) renderChiral(); };
+  $('#mProduce',card).onclick=()=> { if(hasTaught) renderDrill('produce'); };
+  $('#mTrace',card).onclick = ()=> renderTracePicker();
+  $('#homeSave',card).onclick=()=> doExport(card);
+
+  stage.appendChild(card);
+}
+
+/* ---------- 自适应会话:教新批 → 认读已学 → 回 home ----------
+   若有未教的且当前已学者大致稳定(或还很少),先教一批;否则直接 drill。 */
+function startSession(){
+  const taught = taughtCount();
+  if(taught===0){ renderTeach(()=> renderDrill('recognize',{fromSession:true})); return; }
+  const taughtVals = Object.values(STATE.kana).filter(v=>v.taught);
+  const avg = taughtVals.reduce((s,v)=>s+v.mastery,0)/taughtVals.length;
+  const hasUntaught = taught < KANA.length;
+  if(hasUntaught && avg >= 0.6){
+    renderTeach(()=> renderDrill('recognize',{fromSession:true}));
+  }else{
+    renderDrill('recognize',{fromSession:true});
+  }
+}
+
+/* ============================================================
+   入门映射 (TEACH) — 一批 ~6,逐个:大字+音+助记+描红
+   afterDone: 教完整批后的回调(默认回 home)
+   ============================================================ */
+function renderTeach(afterDone){
+  const batch = nextTeachBatch(6);
+  if(!batch.length){
+    if(afterDone) afterDone(); else renderHome();
+    return;
+  }
+  STATE.session.teach++;
+  let bi = 0;
+  function showOne(){
+    clearStage();
+    const it = batch[bi];
+    const card = el(`
+    <div class="card">
+      <div class="quiz-head"><span>入门映射 · 第 ${bi+1}/${batch.length} 个(本批)</span>
+        <span class="timer"><a class="home" href="#" id="bail">收工回首页</a></span></div>
+      <div class="batchdot" id="bdot"></div>
+      <div class="glyph-big" id="g">${it.glyph}</div>
+      <div class="glyph-row"><span class="kindtag ${it.kind==='kata'?'kata':''}">${it.kind==='kata'?'片假名':'平假名'}</span></div>
+      <div class="romaji-big">${it.romaji}　<button class="spk" id="spk">🔊</button></div>
+      <div class="mnemonic">💡 ${it.mn}</div>
+      ${(()=>{ const ce=CHIRAL_TIP[it.glyph]; if(!ce) return '';
+        const badge = ce.type==='mirror'?`<span class="badge mirror">镜像</span>`:`<span class="badge danger">⚠ 异音易混</span>`;
+        return `<div class="tipbox"><div class="lab">易混 · 区分对策</div>${badge}${ce.tip}</div>`; })()}
+      <div class="trace-stage" id="ts">
+        <div class="trace-cross"></div>
+        <div class="trace-ghost">${it.glyph}</div>
+        <canvas id="cv"></canvas>
+      </div>
+      <div class="center small mut">手指描一遍(不判笔顺,练手感)</div>
+      <div class="teach-nav">
+        <button class="btn ghost" id="clr">清除</button>
+        <button class="btn primary" id="nx">${bi<batch.length-1?'下一个 →':'本批完成 ✓'}</button>
+      </div>
+    </div>`);
+    const bd=$('#bdot',card);
+    batch.forEach((_,i)=> bd.appendChild(el(`<div class="d ${i===bi?'on':i<bi?'done':''}"></div>`)));
+    // 教学模式音频 OK(这是教,不是测)
+    speak(it.glyph);
+    $('#spk',card).onclick=()=>speak(it.glyph);
+    $('#g',card).onclick=()=>speak(it.glyph);
+    const tr = attachTracer($('#ts',card), $('#cv',card));
+    $('#clr',card).onclick=()=>tr.clear();
+    $('#bail',card).onclick=(e)=>{ e.preventDefault(); markTaught(batch.slice(0,bi+1)); renderHome(); };
+    $('#nx',card).onclick=()=>{
+      STATE.kana[it.glyph].taught = true;
+      if(STATE.kana[it.glyph].mastery===0) STATE.kana[it.glyph].mastery=0.15;
+      persist();
+      bi++;
+      if(bi<batch.length){ showOne(); }
+      else { recomputeWeak(); if(afterDone) afterDone(); else renderHome(); }
+    };
+    stage.appendChild(card);
+  }
+  showOne();
+}
+function markTaught(items){
+  items.forEach(it=>{ STATE.kana[it.glyph].taught=true; if(STATE.kana[it.glyph].mastery===0) STATE.kana[it.glyph].mastery=0.15; });
+  persist();
+}
+
+/* ============================================================
+   认读 drill (recognize, 反拐杖, 计时) + 听写产出 (produce, 反向)
+   recognize: 显示 glyph,输入/选 romaji,答前无音无 romaji,答后揭晓+发音
+   produce:   播音(声→形),选 glyph
+   ============================================================ */
+function renderDrill(mode, opts){
+  opts = opts || {};
+  const SESSION_LEN = 14;
+  let answered = 0;
+  let useTyping = (mode==='recognize'); // 认读默认打字(产出端),produce 只能选
+  let curGlyph = null, tStart = 0, locked=false;
+
+  function header(){
+    return `<div class="quiz-head">
+      <span>${mode==='recognize'?'认读 drill · 看字答音':'听写产出 · 听音选字'}</span>
+      <span class="timer" id="tmr">0.0s</span>
+    </div>
+    <div class="sess-prog"><i id="sp" style="width:0%"></i></div>`;
+  }
+
+  function finish(){
+    clearStage();
+    const card = el(`<div class="card center">
+      <div class="ok-flash" style="font-size:2.2rem">✓</div>
+      <h2>这一组完成</h2>
+      <p class="mut small">答了 ${answered} 题。弱项会在下一组更早回来。</p>
+      <button class="btn primary wide" id="again" style="margin-top:.6rem">再来一组</button>
+      <button class="btn wide ghost" id="back" style="margin-top:.5rem">回首页</button>
+    </div>`);
+    $('#again',card).onclick=()=>renderDrill(mode,opts);
+    $('#back',card).onclick=()=>renderHome();
+    stage.appendChild(card);
+  }
+
+  function nextQ(){
+    if(answered>=SESSION_LEN){ if(mode==='recognize') STATE.session.recognize++; else STATE.session.produce++; finish(); return; }
+    locked=false;
+    curGlyph = pickDrillGlyph();
+    if(!curGlyph){ finish(); return; }
+    const it = STATE.kana[curGlyph];
+    clearStage();
+    const card = el(`<div class="card">${header()}</div>`);
+
+    if(mode==='recognize'){
+      // 反拐杖:只显示字形,无音无 romaji
+      card.appendChild(el(`<div class="quiz-glyph" id="qg">${curGlyph}</div>`));
+      card.appendChild(el(`<div class="quiz-prompt">这是哪个音?(打 romaji)</div>`));
+      if(useTyping){
+        const inWrap = el(`<div class="answer-in">
+          <input id="ans" type="text" inputmode="latin" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="如 shi / ka / n">
+          <button class="btn primary" id="go" style="flex:0 0 28%">答</button></div>`);
+        card.appendChild(inWrap);
+      }else{
+        const opts4 = buildOptions(curGlyph);
+        const og = el(`<div class="opts" id="opts"></div>`);
+        opts4.forEach(o=> og.appendChild(el(`<button class="opt">${o}</button>`)));
+        card.appendChild(og);
+      }
+    }else{
+      // produce: 声→形。播音(此处音频是题面,不是拐杖,因为测的是 听→形)
+      card.appendChild(el(`<div class="quiz-glyph" id="qg" style="font-size:2.2rem;cursor:pointer">🔊 点播放</div>`));
+      card.appendChild(el(`<div class="quiz-prompt">听到的是哪个假名?</div>`));
+      const wrongs = new Set();
+      const conf = CONFUSE[curGlyph];
+      if(conf) conf.forEach(g=>wrongs.add(g));
+      let guard=0;
+      while(wrongs.size<3 && guard++<200){ const r=KANA[Math.floor(Math.random()*KANA.length)].glyph; if(r!==curGlyph) wrongs.add(r); }
+      const opts4 = shuffle([curGlyph, ...[...wrongs].slice(0,3)]);
+      const og = el(`<div class="opts" id="opts"></div>`);
+      opts4.forEach(g=> og.appendChild(el(`<button class="opt" data-g="${g}">${g}</button>`)));
+      card.appendChild(og);
+    }
+    card.appendChild(el(`<div class="feedback" id="fb"></div>`));
+
+    const sw = el(`<div class="modeswitch">
+      ${mode==='recognize'?`<button class="toggle ${useTyping?'on':''}" id="tgType">打字</button><button class="toggle ${!useTyping?'on':''}" id="tgMC">选项</button>`:''}
+      <button class="toggle" id="exit">回首页</button>
+    </div>`);
+    card.appendChild(sw);
+    stage.appendChild(card);
+
+    $('#exit',card).onclick=()=>{ if(mode==='recognize') STATE.session.recognize++; else STATE.session.produce++; renderHome(); };
+    if(mode==='recognize'){
+      $('#tgType',card).onclick=()=>{ useTyping=true; nextQ(); };
+      $('#tgMC',card).onclick=()=>{ useTyping=false; nextQ(); };
+    }
+
+    // 计时
+    tStart = now();
+    const tmr = $('#tmr',card);
+    const ti = setInterval(()=>{ tmr.textContent=((now()-tStart)/1000).toFixed(1)+'s'; if(locked) clearInterval(ti); }, 100);
+
+    function reveal(correct, picked){
+      if(locked) return; locked=true;
+      const ms = now()-tStart;
+      const fb=$('#fb',card);
+      // 反拐杖:此刻(答后)才发音 + 揭晓
+      speak(curGlyph);
+      gradeAnswer(curGlyph, correct, ms);
+      answered++;
+      $('#sp',card).style.width = Math.round(100*answered/SESSION_LEN)+'%';
+      if(correct){
+        fb.className='feedback ok'; fb.innerHTML=`✓ <span class="ans">${it.romaji}</span> · ${(ms/1000).toFixed(1)}s`;
+      }else{
+        fb.className='feedback no'; fb.innerHTML=`✗ 正确是 <span class="ans">${it.romaji}</span>(${it.kind==='kata'?'片':'平'})`;
+      }
+      setTimeout(nextQ, correct?700:1300);
+    }
+
+    if(mode==='recognize'){
+      if(useTyping){
+        const input=$('#ans',card), go=$('#go',card);
+        setTimeout(()=>{ try{ input.focus(); }catch(e){} }, 60);
+        const submit=()=>{
+          const v=(input.value||'').trim().toLowerCase().replace(/[\s\-_]/g,'');
+          if(!v) return;
+          input.disabled=true; go.disabled=true;
+          reveal(v===it.romaji, v);
+        };
+        go.onclick=submit;
+        input.onkeydown=(e)=>{ if(e.key==='Enter') submit(); };
+      }else{
+        $$('.opt',card).forEach(b=> b.onclick=()=>{
+          const picked=b.textContent;
+          $$('.opt',card).forEach(x=>{x.disabled=true; if(x.textContent===it.romaji)x.classList.add('correct');});
+          const correct = picked===it.romaji;
+          if(!correct) b.classList.add('wrong');
+          reveal(correct, picked);
+        });
+      }
+    }else{
+      // produce: 点字形区/自动播音
+      speak(curGlyph);
+      $('#qg',card).onclick=()=>speak(curGlyph);
+      $$('.opt',card).forEach(b=> b.onclick=()=>{
+        const picked=b.dataset.g;
+        $$('.opt',card).forEach(x=>{x.disabled=true; if(x.dataset.g===curGlyph)x.classList.add('correct');});
+        const correct = picked===curGlyph;
+        if(!correct) b.classList.add('wrong');
+        reveal(correct, picked);
+      });
+    }
+  }
+  nextQ();
+}
+
+/* ============================================================
+   chiral 对撞 — 专攻易混对,记录每次真实混淆
+   只显示 glyph,选 romaji;干扰项是同组镜像伙伴
+   ============================================================ */
+function renderChiral(){
+  const SESSION_LEN = 12;
+  let answered=0, curGlyph=null, curSet=null, tStart=0, locked=false;
+
+  function finish(){
+    STATE.session.chiral++;
+    clearStage();
+    const card=el(`<div class="card center">
+      <div class="ok-flash" style="font-size:2.2rem">✓</div>
+      <h2>对撞完成</h2>
+      <p class="mut small">本档案累计记录了 ${STATE.chiralConfusions.length} 次混淆 —— 这是给下一关的金矿。</p>
+      <button class="btn primary wide" id="again" style="margin-top:.6rem">再来一组</button>
+      <button class="btn wide ghost" id="back" style="margin-top:.5rem">回首页</button>
+    </div>`);
+    $('#again',card).onclick=()=>renderChiral();
+    $('#back',card).onclick=()=>renderHome();
+    stage.appendChild(card);
+  }
+
+  function nextQ(){
+    if(answered>=SESSION_LEN){ finish(); return; }
+    locked=false;
+    // 优先选 已教 且属于某 chiral 组的字;否则放宽到任意 chiral 字
+    const taughtChiral = CHIRAL.filter(entry=> entry.set.some(g=>STATE.kana[g] && STATE.kana[g].taught));
+    const pool = taughtChiral.length? taughtChiral : CHIRAL;
+    curSet = pool[Math.floor(Math.random()*pool.length)];
+    const members = curSet.set;
+    const cands = members.filter(g=>STATE.kana[g]);
+    cands.sort((a,b)=> (STATE.kana[a].mastery)-(STATE.kana[b].mastery));
+    curGlyph = cands[Math.floor(Math.random()*Math.min(cands.length, Math.max(1,Math.ceil(cands.length/2))))] || cands[0];
+    const it = STATE.kana[curGlyph];
+
+    clearStage();
+    const card=el(`<div class="card">
+      <div class="quiz-head"><span>对撞 · 易混镜像组</span><span class="timer" id="tmr">0.0s</span></div>
+      <div class="sess-prog"><i id="sp" style="width:0%"></i></div>
+      <div class="quiz-glyph" id="qg">${curGlyph}</div>
+      <div class="quiz-prompt">是这组里的哪一个?(只看形,别靠音)</div>
+      <div class="opts" id="opts"></div>
+      <div class="feedback" id="fb"></div>
+      <div class="tipbox" id="tip" hidden></div>
+      <div class="modeswitch"><button class="toggle" id="exit">回首页</button></div>
+    </div>`);
+    // 选项 = 同组成员的 romaji(去重),不足补随机
+    let ros = [...new Set(members.map(g=> STATE.kana[g]? STATE.kana[g].romaji : null).filter(Boolean))];
+    if(!ros.includes(it.romaji)) ros.push(it.romaji);
+    let guard=0;
+    while(ros.length<2 && guard++<50){ const r=KANA[Math.floor(Math.random()*KANA.length)].romaji; if(!ros.includes(r)) ros.push(r); }
+    const shown = shuffle(ros);
+    const og=$('#opts',card);
+    shown.forEach(r=> og.appendChild(el(`<button class="opt">${r}</button>`)));
+    stage.appendChild(card);
+
+    $('#exit',card).onclick=()=>{ STATE.session.chiral++; renderHome(); };
+
+    tStart=now();
+    const tmr=$('#tmr',card);
+    const ti=setInterval(()=>{ tmr.textContent=((now()-tStart)/1000).toFixed(1)+'s'; if(locked) clearInterval(ti); },100);
+
+    $$('.opt',card).forEach(b=> b.onclick=()=>{
+      if(locked) return; locked=true;
+      const picked=b.textContent;
+      const correct = picked===it.romaji;
+      const ms=now()-tStart;
+      $$('.opt',card).forEach(x=>{x.disabled=true; if(x.textContent===it.romaji)x.classList.add('correct');});
+      if(!correct){
+        b.classList.add('wrong');
+        // 记录真实混淆事件(金矿)
+        STATE.chiralConfusions.push({ shown: curGlyph, shownRomaji: it.romaji, pickedRomaji: picked });
+      }
+      speak(curGlyph); // 答后发音
+      gradeAnswer(curGlyph, correct, ms);
+      answered++;
+      $('#sp',card).style.width=Math.round(100*answered/SESSION_LEN)+'%';
+      const fb=$('#fb',card);
+      if(correct){ fb.className='feedback ok'; fb.innerHTML=`✓ <span class="ans">${it.romaji}</span>`; }
+      else{ fb.className='feedback no'; fb.innerHTML=`✗ 你看成了「${picked}」,其实是 <span class="ans">${it.romaji}</span>`; }
+      // 撞墙后立刻给对策(payoff)
+      const tip=$('#tip',card);
+      let badge='';
+      if(curSet.type==='mirror') badge=`<span class="badge mirror">镜像</span>`;
+      else if(curSet.type==='danger') badge=`<span class="badge danger">⚠ 异音易混</span>`;
+      tip.innerHTML=`<div class="lab">区分对策</div>${badge}${curSet.tip}`;
+      tip.hidden=false;
+      setTimeout(nextQ, correct?900:1800);
+    });
+  }
+  nextQ();
+}
+
+/* ============================================================
+   默写 motor — 凭记忆把音写成假名,写完对答案自检(无 OCR,自评)
+   prompt 只给 kind+romaji+🔊;字形(ghost)默认隐藏,对答案才揭晓
+   ============================================================ */
+function renderTracePicker(){
+  clearStage();
+  recomputeWeak();
+  let g = STATE.weak[0] || Object.entries(STATE.kana).filter(([,v])=>v.taught).map(([k])=>k)[0] || KANA[0].glyph;
+  renderTrace(g);
+}
+function renderTrace(glyph){
+  clearStage();
+  const it = STATE.kana[glyph];
+  STATE.session.write++;
+  const card = el(`
+  <div class="card">
+    <div class="quiz-head"><span>默写 · 凭记忆写</span>
+      <span class="timer"><button class="toggle" id="exit">回首页</button></span></div>
+    <div class="glyph-row" style="margin-bottom:.3rem">
+      <span class="kindtag ${it.kind==='kata'?'kata':''}">${it.kind==='kata'?'片假名':'平假名'}</span>
+      <span style="margin-left:.4rem;color:var(--accent);font-size:1.4rem;letter-spacing:.04em">${it.romaji}</span>
+      <button class="spk" id="spk" style="vertical-align:middle;margin-left:.3rem">🔊</button>
+    </div>
+    <div class="trace-stage" id="ts">
+      <div class="trace-cross"></div>
+      <div class="trace-ghost" id="ghost" hidden>${glyph}</div>
+      <canvas id="cv"></canvas>
+    </div>
+    <div class="center small mut" id="cap">凭记忆把这个音写成假名 ↓(写完再对答案)</div>
+    <div class="teach-nav" id="nav">
+      <button class="btn ghost" id="clr">清除</button>
+      <button class="btn primary" id="check">对答案 ✓</button>
+    </div>
+  </div>`);
+  stage.appendChild(card);
+  speak(glyph);
+  $('#spk',card).onclick=()=>speak(glyph);
+  const tr = attachTracer($('#ts',card), $('#cv',card));
+  $('#clr',card).onclick=()=>tr.clear();
+  $('#exit',card).onclick=()=>renderHome();
+
+  function advance(){
+    recomputeWeak();
+    let nx = STATE.weak.find(w=>w!==glyph);
+    if(!nx){ const pool = Object.keys(STATE.kana).filter(k=>k!==glyph); nx = pool[Math.floor(Math.random()*pool.length)]; }
+    renderTrace(nx);
+  }
+  function rate(correct){
+    const s = STATE.kana[glyph];
+    s.taught = true;
+    s.write = s.write || {attempts:0, correct:0};
+    s.write.attempts++;
+    if(correct){ s.write.correct++; s.mastery = Math.min(1, s.mastery + 0.25); }
+    else { s.mastery = Math.max(0, s.mastery - 0.1); }
+    persist();
+    advance();
+  }
+
+  $('#check',card).onclick=()=>{
+    $('#ghost',card).hidden = false;                 // 揭晓正确字形(淡灰)在蓝色笔迹之下
+    $('#cap',card).textContent = '对一下:淡灰是正确字形,你写的是蓝色 —— 写对了吗?';
+    const nav = $('#nav',card);
+    nav.innerHTML = '';
+    nav.appendChild(el(`<button class="btn ghost" id="no">没写对 ✗</button>`));
+    nav.appendChild(el(`<button class="btn primary" id="yes">写对了 ✓</button>`));
+    $('#no',nav).onclick=()=>rate(false);
+    $('#yes',nav).onclick=()=>rate(true);
+  };
+}
+
+/* ---------- canvas 描红引擎(pointer events, 触控+鼠标) ---------- */
+function attachTracer(stageEl, canvas){
+  const ctx = canvas.getContext('2d');
+  let drew=false;
+  function size(){
+    const rect = stageEl.getBoundingClientRect();
+    const dpr = window.devicePixelRatio||1;
+    canvas.width = Math.max(1,Math.round(rect.width*dpr));
+    canvas.height = Math.max(1,Math.round(rect.height*dpr));
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.lineCap='round'; ctx.lineJoin='round'; ctx.lineWidth=10;
+    ctx.strokeStyle='#9ecbff';
+  }
+  size();
+  setTimeout(size, 40);  // 渲染后布局稳定再量一次
+  let drawing=false, lx=0, ly=0;
+  function pos(e){
+    const rect=canvas.getBoundingClientRect();
+    return { x:e.clientX-rect.left, y:e.clientY-rect.top };
+  }
+  function down(e){ e.preventDefault(); drawing=true; const p=pos(e); lx=p.x; ly=p.y;
+    ctx.beginPath(); ctx.moveTo(lx,ly); ctx.lineTo(lx+0.1,ly+0.1); ctx.stroke(); drew=true;
+    try{ canvas.setPointerCapture(e.pointerId); }catch(_){} }
+  function move(e){ if(!drawing) return; e.preventDefault(); const p=pos(e);
+    ctx.beginPath(); ctx.moveTo(lx,ly); ctx.lineTo(p.x,p.y); ctx.stroke(); lx=p.x; ly=p.y; }
+  function up(){ drawing=false; }
+  canvas.addEventListener('pointerdown',down);
+  canvas.addEventListener('pointermove',move);
+  canvas.addEventListener('pointerup',up);
+  canvas.addEventListener('pointercancel',up);
+  canvas.addEventListener('pointerleave',up);
+  return {
+    clear(){ ctx.clearRect(0,0,canvas.width,canvas.height); drew=false; },
+    drew(){ return drew; }
+  };
+}
+
+/* ============================================================
+   启动
+   ============================================================ */
+renderHome();
+</script>
+</body>
+</html>

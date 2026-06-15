@@ -10,3 +10,6 @@ Thumbs.db
 
 # Per-learner runtime state (the downloadable source of truth) is not source content.
 telemetry-*.json
+
+# Local Claude Code config / worktrees — never publish.
+.claude/
