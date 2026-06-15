@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="背词">
+<meta name="theme-color" content="#0f1115">
+<title>背词 · SRS</title>
+<style>
+  :root{ --bg:#0f1115; --card:#1a1e26; --card2:#222836; --fg:#e8ebf0; --dim:#9aa3b2;
+    --line:#2b3242; --yes:#3ecf8e; --mid:#e6b34a; --no:#e0607a; --acc:#6ea8ff; }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  [hidden]{ display:none!important; }   /* class display beats UA [hidden]; force it (CodePattern) */
+  html,body{ margin:0; height:100%; background:var(--bg); color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans",sans-serif; }
+  body{ display:flex; flex-direction:column; }
+  #app{ flex:1; display:flex; flex-direction:column; max-width:560px; width:100%;
+    margin:0 auto; padding:env(safe-area-inset-top) 16px calc(16px + env(safe-area-inset-bottom)); }
+  h1{ font-size:20px; margin:18px 0 4px; }
+  .dim{ color:var(--dim); }
+  .small{ font-size:13px; }
+  .grow{ flex:1; }
+  .center{ display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+  .btn{ appearance:none; border:1px solid var(--line); background:var(--card2); color:var(--fg);
+    font-size:16px; padding:14px 16px; border-radius:14px; width:100%; cursor:pointer; }
+  .btn:active{ transform:scale(.985); }
+  .btn.primary{ background:var(--acc); border-color:var(--acc); color:#0b1220; font-weight:600; }
+  .btn.ghost{ background:transparent; }
+  .btn.sm{ font-size:14px; padding:10px 12px; width:auto; }
+  .row{ display:flex; gap:10px; }
+  .row > *{ flex:1; }
+  .tile{ background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px; }
+  .menu .btn{ text-align:left; margin-top:10px; }
+  .pill{ display:inline-block; font-size:12px; color:var(--dim); border:1px solid var(--line);
+    border-radius:999px; padding:2px 9px; margin:2px 4px 2px 0; }
+  /* card */
+  .face{ background:var(--card); border:1px solid var(--line); border-radius:20px; padding:28px 20px;
+    min-height:46vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+  .surface{ font-size:46px; font-weight:600; line-height:1.15; }
+  .reading{ font-size:22px; color:var(--acc); margin-top:10px; }
+  .gloss{ font-size:24px; margin-top:6px; }
+  .romaji{ font-size:15px; color:var(--dim); margin-top:4px; letter-spacing:.5px; }
+  .rule{ font-size:13px; color:var(--mid); margin-top:14px; max-width:34ch; }
+  .ex{ font-size:14px; color:var(--dim); margin-top:12px; }
+  .tap{ color:var(--dim); font-size:14px; margin-top:18px; }
+  .grades{ display:flex; gap:10px; margin-top:14px; }
+  .grades .btn{ font-weight:600; }
+  .g-yes{ border-color:var(--yes); color:var(--yes); }
+  .g-mid{ border-color:var(--mid); color:var(--mid); }
+  .g-no{ border-color:var(--no); color:var(--no); }
+  .spk{ background:transparent; border:1px solid var(--line); border-radius:999px; color:var(--fg);
+    font-size:18px; padding:6px 14px; margin-top:14px; cursor:pointer; }
+  .bar{ height:5px; background:var(--card2); border-radius:999px; overflow:hidden; margin:10px 0 4px; }
+  .bar > span{ display:block; height:100%; background:var(--acc); width:0%; transition:width .25s; }
+  textarea{ width:100%; min-height:140px; background:#0b0e14; color:var(--fg); border:1px solid var(--line);
+    border-radius:12px; padding:12px; font:13px/1.4 ui-monospace,Menlo,monospace; resize:vertical; }
+  .note{ background:var(--card2); border:1px solid var(--line); border-radius:12px; padding:12px 14px;
+    font-size:14px; color:var(--dim); margin-top:12px; }
+  .topnav{ display:flex; align-items:center; gap:10px; margin-top:6px; }
+  .topnav .back{ font-size:15px; color:var(--acc); background:none; border:none; cursor:pointer; padding:6px 0; }
+  footer{ text-align:center; color:#555c6b; font-size:11px; padding:14px 0 6px; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<footer>背词 · 离线 SRS · 状态存本机(记得加主屏幕)</footer>
+
+<script>
+/* ============================================================
+   背词 SRS · 单文件离线 app  (设计稿: docs/背单词app设计稿.md)
+   - 持久化: IndexedDB (GH Pages 真 origin 合法持久; 导出 JSON 仅作存档)
+   - 算法: Leitner 阶梯盒, yes/mid/no 自评, 久别重逢不羞辱
+   - 词库: 内嵌 PLACEHOLDER (provenance:"placeholder"), 真库后续填
+   ============================================================ */
+
+/* ---- helpers (CodePattern) ---- */
+const el=(h)=>{const t=document.createElement('template');t.innerHTML=h.trim();return t.content.firstChild;};
+const $=(s,r)=>(r||document).querySelector(s);
+const $$=(s,r)=>[...(r||document).querySelectorAll(s)];
+const app=$('#app');
+const now=()=>Date.now();
+const MIN=60e3, HOUR=3600e3, DAY=864e5;
+const shuffle=a=>a.map(x=>[x,Math.random()]).sort((p,q)=>p[1]-q[1]).map(x=>x[0]);
+
+/* ---- offline TTS (CodePattern) ---- */
+let jaVoice=null;
+function pickVoice(){ const vs=window.speechSynthesis?speechSynthesis.getVoices():[];
+  jaVoice=vs.find(v=>/ja[-_]?JP/i.test(v.lang))||vs.find(v=>/^ja/i.test(v.lang))||null; }
+if(window.speechSynthesis){ pickVoice(); speechSynthesis.onvoiceschanged=pickVoice; }
+function speak(text,rate){ if(!window.speechSynthesis)return;
+  try{ speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text);
+    u.lang="ja-JP"; u.rate=rate||0.85; u.pitch=1; if(jaVoice)u.voice=jaVoice; speechSynthesis.speak(u);
+  }catch(e){} }
+
+/* ---- PLACEHOLDER LIBRARY ----------------------------------
+   极小占位库, 仅供跑通引擎. 真库按 docs §2.3 pack 结构 + §12 域锚点后填.
+   id 必须稳定 (SRS 进度挂在它上面). */
+const SEED=[
+  {id:"kata.download", layer:2, surface:"ダウンロード", reading:"だうんろーど", romaji:"download",
+   gloss:"下载", pos:"名/する", tags:["katakana-decode","web-nav-ui","moonshot2"],
+   rule:"英语 download 过日语音系: ow→ロー, d→ド", examples:[{ja:"無料ダウンロード",zh:"免费下载"}],
+   confusableWith:[], pack:"katakana-decode", provenance:"placeholder", contentVer:1},
+  {id:"kata.layer", layer:2, surface:"レイヤー", reading:"れいやー", romaji:"layer",
+   gloss:"图层", pos:"名", tags:["katakana-decode","art"], rule:"layer→レイヤー (绘画沟通词, 非工具栏)",
+   examples:[{ja:"レイヤーを分ける",zh:"分图层"}], confusableWith:[], pack:"katakana-decode",
+   provenance:"placeholder", contentVer:1},
+  {id:"kata.save", layer:2, surface:"セーブ", reading:"せーぶ", romaji:"save",
+   gloss:"存档", pos:"名/する", tags:["katakana-decode","gamedev"], rule:"save→セーブ",
+   examples:[{ja:"セーブしますか?",zh:"要存档吗?"}], confusableWith:[], pack:"katakana-decode",
+   provenance:"placeholder", contentVer:1},
+  {id:"on.kougeki", layer:1, surface:"攻撃", reading:"こうげき", romaji:"kougeki",
+   gloss:"攻击", pos:"名/する", tags:["onyomi","gamedev","battle"],
+   rule:"攻=こう(后鼻音→长音); 撃=げき(入声→ki)", examples:[{ja:"クリティカル攻撃!",zh:"暴击!"}],
+   confusableWith:[], pack:"onyomi-rules", provenance:"placeholder", contentVer:1},
+  {id:"on.settei", layer:1, surface:"設定", reading:"せってい", romaji:"settei",
+   gloss:"设定/设置", pos:"名/する", tags:["onyomi","web-nav-ui"], rule:"設=せつ→促音っ; 定=てい",
+   examples:[{ja:"設定を開く",zh:"打开设置"}], confusableWith:[], pack:"web-nav-ui",
+   provenance:"placeholder", contentVer:1},
+  {id:"on.kensaku", layer:1, surface:"検索", reading:"けんさく", romaji:"kensaku",
+   gloss:"检索/搜索", pos:"名/する", tags:["onyomi","web-nav-ui","moonshot2"], rule:"検=けん; 索=さく(入声→ku)",
+   examples:[{ja:"日本語で検索する",zh:"用日语搜索"}], confusableWith:[], pack:"web-nav-ui",
+   provenance:"placeholder", contentVer:1},
+  {id:"kana.shi-kata", layer:0, surface:"シ", reading:"し", romaji:"shi",
+   gloss:"假名 shi", pos:"仮名", tags:["kana-kata","chiral"], rule:"シ 笔画偏平, 收笔由下往上",
+   examples:[], confusableWith:["kana.tsu-kata"], pack:"kana-kata", provenance:"placeholder", contentVer:1},
+  {id:"kana.tsu-kata", layer:0, surface:"ツ", reading:"つ", romaji:"tsu",
+   gloss:"假名 tsu", pos:"仮名", tags:["kana-kata","chiral"], rule:"ツ 笔画偏竖, 收笔由上往下",
+   examples:[], confusableWith:["kana.shi-kata"], pack:"kana-kata", provenance:"placeholder", contentVer:1},
+];
+const LIB={}; SEED.forEach(c=>LIB[c.id]=c);
+const PACKS=[...new Set(SEED.map(c=>c.pack))];
+
+/* ---- SRS 引擎 (Leitner) -----------------------------------
+   box 1..7 调度; box 反映熟练度. 间隔: */
+const IVAL=[0, 10*MIN, DAY, 3*DAY, 7*DAY, 16*DAY, 40*DAY, 90*DAY]; // index 0..7
+const MAXBOX=7, NEW_RATE=10, BATCH=30, LEECH_LAPSES=3;
+const fuzz=ms=> ms<=10*MIN ? ms : Math.round(ms*(0.85+Math.random()*0.30)); // ±15%, 不抖短间隔
+function freshRec(id){ return {id, box:1, due:0, lastReviewed:0, reps:0, lapses:0,
+  state:"new", lastGrade:null, history:[], priority:0, seenContentVer:LIB[id]?LIB[id].contentVer:1}; }
+function applyGrade(rec,g){
+  rec.reps++; rec.lastReviewed=now(); rec.lastGrade=g;
+  rec.history=(rec.history||[]).concat(g).slice(-8);
+  if(g==="yes"){ rec.box=Math.min(MAXBOX, rec.box+1); rec.state="review"; }
+  else if(g==="mid"){ rec.state="review"; /* box 不变 */ }
+  else { rec.box=1; rec.lapses++; rec.state="learning";
+    if(rec.lapses>=LEECH_LAPSES) rec.state="leech"; }
+  rec.due = now() + fuzz(IVAL[rec.box]);
+  return rec;
+}
+const isLeech=r=>r.state==="leech";
+// 久别重逢: 取到期(due<=now)且未撤出, 按 优先级=低box优先→逾期久优先, 截 BATCH 张; 不按逾期天数羞辱.
+function buildReviewQueue(){
+  const t=now();
+  const due=Object.values(STATE.srs).filter(r=>r.state!=="leech" && r.due<=t && r.state!=="new");
+  due.sort((a,b)=> (b.priority-a.priority) || (a.box-b.box) || (a.due-b.due));
+  return due.slice(0, BATCH);
+}
+function buildNewQueue(n){
+  const have=new Set(Object.keys(STATE.srs));
+  const fresh=SEED.filter(c=>!have.has(c.id)).slice(0, n);
+  return fresh.map(c=>{ const r=freshRec(c.id); STATE.srs[c.id]=r; return r; });
+}
+
+/* ---- 持久化: IndexedDB ------------------------------------- */
+const DB_NAME="vocab-srs", DB_VER=1;
+let DB=null;
+function openDB(){ return new Promise((res,rej)=>{
+  const rq=indexedDB.open(DB_NAME, DB_VER);
+  rq.onupgradeneeded=e=>{ const db=e.target.result;
+    if(!db.objectStoreNames.contains("srs")) db.createObjectStore("srs",{keyPath:"id"});
+    if(!db.objectStoreNames.contains("meta")) db.createObjectStore("meta",{keyPath:"k"}); };
+  rq.onsuccess=e=>{ DB=e.target.result; res(DB); };
+  rq.onerror=e=>rej(e); }); }
+function tx(store,mode){ return DB.transaction(store,mode).objectStore(store); }
+function idbPut(store,val){ return new Promise((res,rej)=>{ const r=tx(store,"readwrite").put(val);
+  r.onsuccess=()=>res(); r.onerror=e=>rej(e); }); }
+function idbGetAll(store){ return new Promise((res,rej)=>{ const r=tx(store,"readonly").getAll();
+  r.onsuccess=()=>res(r.result||[]); r.onerror=e=>rej(e); }); }
+function idbGet(store,k){ return new Promise((res,rej)=>{ const r=tx(store,"readonly").get(k);
+  r.onsuccess=()=>res(r.result||null); r.onerror=e=>rej(e); }); }
+async function saveRec(rec){ STATE.srs[rec.id]=rec; try{ await idbPut("srs",rec); }catch(e){} }
+async function saveMeta(){ try{ await idbPut("meta",{k:"app", ...STATE.meta}); }catch(e){} }
+
+/* ---- 内存态 ---- */
+const STATE={ srs:{}, meta:{ lastAppliedSeq:0, addedHome:false } };
+async function loadAll(){
+  const recs=await idbGetAll("srs"); recs.forEach(r=>STATE.srs[r.id]=r);
+  const m=await idbGet("meta","app"); if(m){ STATE.meta={...STATE.meta, ...m}; delete STATE.meta.k; }
+}
+
+/* ============================================================
+   UI
+   ============================================================ */
+let SESSION=null; // {queue:[recs], i:0, mode, revealed, freegrind:bool, packCards:[]}
+
+function clear(){ app.innerHTML=''; window.scrollTo(0,0); }
+function topnav(title){ return `<div class="topnav"><button class="back" id="back">← 返回</button>
+  <span class="dim">${title}</span></div>`; }
+function wireBack(){ const b=$('#back'); if(b) b.onclick=renderHome; }
+
+/* ---------- 首页 ---------- */
+function renderHome(){
+  clear();
+  const dueN=buildReviewQueue().length;
+  const total=SEED.length, learned=Object.values(STATE.srs).filter(r=>r.box>=3).length;
+  const leeches=Object.values(STATE.srs).filter(isLeech).length;
+  app.appendChild(el(`<div>
+    <h1>背词</h1>
+    <div class="small dim">挑了 ${dueN} 张该看的 · 已熟 ${learned}/${total}</div>
+    <div class="bar"><span style="width:${total?Math.round(learned/total*100):0}%"></span></div>
+    ${STATE.meta.addedHome?'':`<div class="note" id="a2hs">📌 先「添加到主屏幕」(分享→添加到主屏幕),否则 iOS 7 天不用会清掉进度。<br><span class="dim small">点这里我就不再提醒</span></div>`}
+    <div class="menu">
+      <button class="btn primary" id="start">${dueN>0?`开始复习 (${dueN})`:'引入新词'}</button>
+      <button class="btn" id="free">自由刷 (挑包刷, 不进 SRS)</button>
+      <button class="btn ghost" id="snap">弱点快照 (复制给老师)</button>
+      <button class="btn ghost" id="save">存档 · 导出 / 导入</button>
+    </div>
+    ${leeches?`<div class="note">有 ${leeches} 个顽固词卡住了。要不要在 chat 里告诉老师, 让他派个专项强化?</div>`:''}
+  </div>`));
+  const a2=$('#a2hs'); if(a2) a2.onclick=async()=>{ STATE.meta.addedHome=true; await saveMeta(); renderHome(); };
+  $('#start').onclick=startReview;
+  $('#free').onclick=renderFreePicker;
+  $('#snap').onclick=renderSnapshot;
+  $('#save').onclick=renderSave;
+}
+
+/* ---------- 复习 session ---------- */
+function startReview(){
+  const review=buildReviewQueue();
+  const room=Math.max(0, NEW_RATE - 0);
+  const fresh=buildNewQueue(room);
+  // 交错: 新词稀释进复习流
+  const q=shuffle([...review, ...fresh]);
+  if(q.length===0){ renderEmpty(); return; }
+  SESSION={ queue:q, i:0, revealed:false, freegrind:false };
+  renderCard();
+}
+function renderEmpty(){
+  clear();
+  app.appendChild(el(`<div class="grow center">
+    <div style="font-size:40px">🌱</div>
+    <h1>暂时没有到期的</h1>
+    <div class="dim small">欢迎随时回来, 不催。要不要去「自由刷」挑点新词?</div>
+    <div style="height:18px"></div>
+    <button class="btn" id="free">自由刷</button>
+    <div style="height:8px"></div>
+    <button class="btn ghost" id="home">返回</button>
+  </div>`));
+  $('#free').onclick=renderFreePicker; $('#home').onclick=renderHome;
+}
+
+function curCard(){ const rec=SESSION.queue[SESSION.i]; return {rec, card:LIB[rec.id]}; }
+function renderCard(){
+  clear();
+  const {rec,card}=curCard();
+  const n=SESSION.queue.length, done=SESSION.i;
+  const front=`<div class="surface">${card.surface}</div>`;
+  app.appendChild(el(`<div>
+    ${topnav(SESSION.freegrind?'自由刷':'复习')}
+    <div class="bar"><span style="width:${Math.round(done/n*100)}%"></span></div>
+    <div class="small dim">${done+1} / ${n}${card.provenance==='placeholder'?' · 占位词':''}</div>
+    <div class="face" id="face">
+      ${front}
+      <div id="reveal" hidden>
+        <div class="reading">${card.reading||''}</div>
+        <div class="gloss">${card.gloss||''}</div>
+        <div class="romaji">${card.romaji||''}</div>
+        ${card.rule?`<div class="rule">💡 ${card.rule}</div>`:''}
+        ${(card.examples&&card.examples[0])?`<div class="ex">${card.examples[0].ja} — ${card.examples[0].zh||''}</div>`:''}
+        <button class="spk" id="spk" hidden>🔊 听</button>
+      </div>
+      <div class="tap" id="taphint">点一下看答案</div>
+    </div>
+    <div id="actions"></div>
+  </div>`));
+  wireBack();
+  SESSION.revealed=false;
+  $('#face').onclick=()=>{ if(!SESSION.revealed) reveal(); };
+  renderActions();
+}
+function reveal(){
+  SESSION.revealed=true;
+  $('#reveal').hidden=false; $('#taphint').hidden=true;
+  const {card}=curCard();
+  // 🔊 reveal-after only (CodePattern: 别给绕过被测技能的拐杖)
+  const spk=$('#spk'); if(spk){ spk.hidden=false; spk.onclick=(e)=>{ e.stopPropagation();
+    speak(card.reading&&/[ぁ-んァ-ヶ]/.test(card.surface)?card.surface:(card.surface||card.reading)); }; }
+  renderActions();
+}
+function renderActions(){
+  const host=$('#actions'); host.innerHTML='';
+  if(!SESSION.revealed){
+    host.appendChild(el(`<button class="btn ghost" id="rv">看答案</button>`));
+    $('#rv').onclick=reveal; return;
+  }
+  if(SESSION.freegrind){
+    host.appendChild(el(`<button class="btn primary" id="nx">下一张 →</button>`));
+    $('#nx').onclick=nextCard; return;
+  }
+  host.appendChild(el(`<div class="grades">
+    <button class="btn g-no" data-g="no">忘了</button>
+    <button class="btn g-mid" data-g="mid">模糊</button>
+    <button class="btn g-yes" data-g="yes">认识</button>
+  </div>`));
+  $$('.grades .btn').forEach(b=> b.onclick=()=>grade(b.dataset.g));
+}
+async function grade(g){
+  const {rec}=curCard();
+  applyGrade(rec,g);
+  await saveRec(rec);
+  // box1 的结果 (mid/no, 10min 内) 同 session 末尾重现
+  if(rec.box===1 && (g==="mid"||g==="no") && !isLeech(rec)) SESSION.queue.push(rec);
+  nextCard();
+}
+function nextCard(){
+  SESSION.i++;
+  if(SESSION.i>=SESSION.queue.length){ renderDone(); return; }
+  renderCard();
+}
+function renderDone(){
+  clear();
+  const cnt=SESSION.queue.length;
+  app.appendChild(el(`<div class="grow center">
+    <div style="font-size:44px">✅</div>
+    <h1>这轮完成</h1>
+    <div class="dim small">过了 ${cnt} 张。回来即接上, 不催不算账。</div>
+    <div style="height:18px"></div>
+    <button class="btn primary" id="more">再来一轮</button>
+    <div style="height:8px"></div>
+    <button class="btn ghost" id="home">回首页</button>
+  </div>`));
+  $('#more').onclick=SESSION.freegrind?renderFreePicker:startReview;
+  $('#home').onclick=renderHome;
+}
+
+/* ---------- 自由刷 (不写 SRS) ---------- */
+function renderFreePicker(){
+  clear();
+  app.appendChild(el(`<div>
+    ${topnav('自由刷')}
+    <h1>挑个词包刷</h1>
+    <div class="dim small">自由刷不写入 SRS 调度, 不污染复习负载。纯爽。</div>
+    <div class="menu">
+      ${PACKS.map(p=>`<button class="btn" data-p="${p}">${p} (${SEED.filter(c=>c.pack===p).length})</button>`).join('')}
+    </div>
+  </div>`));
+  wireBack();
+  $$('[data-p]').forEach(b=> b.onclick=()=>startFree(b.dataset.p));
+}
+function startFree(pack){
+  const cards=shuffle(SEED.filter(c=>c.pack===pack));
+  SESSION={ queue:cards.map(c=>({id:c.id})), i:0, revealed:false, freegrind:true };
+  renderCard();
+}
+
+/* ---------- 弱点快照 (主动复制, 不自动上报) ---------- */
+function renderSnapshot(){
+  clear();
+  const recs=Object.values(STATE.srs);
+  const leeches=recs.filter(isLeech).map(r=>LIB[r.id]?LIB[r.id].surface:r.id);
+  const slowest=recs.filter(r=>!isLeech(r)&&r.lapses>0).sort((a,b)=>b.lapses-a.lapses)
+    .slice(0,8).map(r=>`${LIB[r.id]?LIB[r.id].surface:r.id}(×${r.lapses})`);
+  // 易混对: confusableWith 两边都近期 no
+  const recentNo=id=>{ const r=STATE.srs[id]; return r&&(r.history||[]).slice(-3).includes("no"); };
+  const seen=new Set(), confusions=[];
+  SEED.forEach(c=>(c.confusableWith||[]).forEach(o=>{ const k=[c.id,o].sort().join('|');
+    if(!seen.has(k) && recentNo(c.id) && recentNo(o)){ seen.add(k);
+      confusions.push(`${c.surface}↔${LIB[o]?LIB[o].surface:o}`); } }));
+  const snap={ app:"vocab-srs", kind:"weak-snapshot",
+    counts:{ total:SEED.length, seen:recs.length, leech:leeches.length },
+    leeches, confusions, slowest };
+  const text=JSON.stringify(snap,null,2);
+  app.appendChild(el(`<div>
+    ${topnav('弱点快照')}
+    <h1>弱点快照</h1>
+    <div class="dim small">本机算的, 给你自己用。想让老师派强化时, 复制粘给他即可——不会自动上报。</div>
+    <div class="note">
+      ${leeches.length?`顽固: ${leeches.join('、')}<br>`:''}
+      ${confusions.length?`易混: ${confusions.join('、')}<br>`:''}
+      ${slowest.length?`偏慢: ${slowest.join('、')}`:''}
+      ${(!leeches.length&&!confusions.length&&!slowest.length)?'暂时没有明显弱点 — 多刷几轮再来看。':''}
+    </div>
+    <div style="height:10px"></div>
+    <textarea id="snaptext" readonly>${text}</textarea>
+    <div style="height:10px"></div>
+    <button class="btn primary" id="copy">复制</button>
+  </div>`));
+  wireBack();
+  $('#copy').onclick=async()=>{ const ta=$('#snaptext'); ta.select();
+    try{ await navigator.clipboard.writeText(ta.value); }catch(e){ document.execCommand('copy'); }
+    $('#copy').textContent='已复制 ✓'; };
+}
+
+/* ---------- 存档: 导出/导入 (iOS 导出三连 CodePattern) ---------- */
+function renderSave(){
+  clear();
+  app.appendChild(el(`<div>
+    ${topnav('存档')}
+    <h1>存档 · 备份</h1>
+    <div class="dim small">纯备份(防 iOS 清缓存/换机), 不是上报。导出后可发给自己存着。</div>
+    <div class="menu">
+      <button class="btn primary" id="exp">导出存档</button>
+      <button class="btn" id="imp">导入存档(粘贴)</button>
+    </div>
+    <div id="expbox" hidden>
+      <div style="height:12px"></div>
+      <textarea id="exptext" readonly></textarea>
+      <div style="height:8px"></div>
+      <div class="row"><button class="btn sm" id="share">分享/保存</button><button class="btn sm" id="copy">复制</button></div>
+    </div>
+    <div id="impbox" hidden>
+      <div style="height:12px"></div>
+      <textarea id="imptext" placeholder="把之前导出的存档 JSON 粘到这里"></textarea>
+      <div style="height:8px"></div>
+      <button class="btn primary" id="doimp">导入并合并</button>
+      <div class="small dim" id="impmsg"></div>
+    </div>
+  </div>`));
+  wireBack();
+  $('#exp').onclick=()=>{ $('#impbox').hidden=true; doExport(); };
+  $('#imp').onclick=()=>{ $('#expbox').hidden=true; $('#impbox').hidden=false; };
+}
+function exportPayload(){
+  return { app:"vocab-srs", schema:1, kind:"save", exportedAt:now(),
+    meta:STATE.meta, srs:STATE.srs };
+}
+async function doExport(){
+  const text=JSON.stringify(exportPayload(),null,2), fname="vocab-save.json";
+  $('#expbox').hidden=false; $('#exptext').value=text;
+  $('#copy').onclick=async()=>{ const ta=$('#exptext'); ta.select();
+    try{ await navigator.clipboard.writeText(ta.value); }catch(e){ document.execCommand('copy'); }
+    $('#copy').textContent='已复制 ✓'; };
+  $('#share').onclick=async()=>{
+    let shared=false;
+    try{ if(navigator.canShare){ const file=new File([text],fname,{type:"application/json"});
+      if(navigator.canShare({files:[file]})){ await navigator.share({files:[file],title:fname}); shared=true; } }
+    }catch(e){}
+    if(!shared){ try{ const url=URL.createObjectURL(new Blob([text],{type:"application/json"}));
+      const a=document.createElement('a'); a.href=url; a.download=fname; a.click();
+      setTimeout(()=>URL.revokeObjectURL(url),3000); }catch(e){} }
+  };
+}
+async function doImport(){
+  const msg=$('#impmsg');
+  let data; try{ data=JSON.parse($('#imptext').value); }catch(e){ msg.textContent='✗ JSON 解析失败'; return; }
+  if(!data || data.app!=="vocab-srs" || !data.srs){ msg.textContent='✗ 不是有效的存档'; return; }
+  let n=0;
+  for(const id in data.srs){ const inc=data.srs[id], cur=STATE.srs[id];
+    // 合并策略: 取复习次数更多的一份 (更新的进度)
+    if(!cur || (inc.reps||0)>=(cur.reps||0)){ await saveRec(inc); n++; } }
+  if(data.meta){ STATE.meta={...STATE.meta, ...data.meta}; await saveMeta(); }
+  msg.textContent=`✓ 已合并 ${n} 张卡`;
+}
+
+/* ============================================================ */
+async function boot(){
+  try{ await openDB(); await loadAll(); }
+  catch(e){ /* IDB 不可用(隐私模式等): 退化为内存态, 仍能用一次 */ }
+  renderHome();
+  // 导入按钮在 renderSave 里挂, 这里补全局委派
+  document.addEventListener('click',e=>{ if(e.target&&e.target.id==='doimp') doImport(); });
+}
+boot();
+</script>
+</body>
+</html>
